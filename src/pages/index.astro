@@ -1,0 +1,186 @@
+---
+import Base from '../layouts/Base.astro';
+import Prancha from '../components/Prancha.astro';
+import Rosa from '../components/Rosa.astro';
+import RampaHipso from '../components/RampaHipso.astro';
+
+const lentes = [
+  { nome: 'Mapa',    chave: 'onde',     texto: 'Pilha de camadas sobre o globo, amarrada a um ano.' },
+  { nome: 'Tempo',   chave: 'quando',   texto: 'Linha do tempo rolável e o corte sincrônico: o que mais acontecia em 1848?' },
+  { nome: 'Rede',    chave: 'com quem', texto: 'Grafo de relações: aliança, vassalagem, colônia, comércio, filiação intelectual.' },
+  { nome: 'Verbete', chave: 'por quê',  texto: 'O texto longo, com fontes, que nenhum mapa substitui.' },
+];
+
+const estado = [
+  { fase: 'Fase 0', titulo: 'A prancha', estado: 'em curso', itens: [
+    ['Sistema visual em código, dois temas', true],
+    ['Molde de prancha e de verbete', true],
+    ['Mecanismo de fonte por afirmação', true],
+    ['Um país feito inteiro, de ponta a ponta', true],
+  ]},
+  { fase: 'Fase 1', titulo: 'O mapa-mãe', estado: 'a seguir', itens: [
+    ['Ladrilhos PMTiles estáticos', false],
+    ['Camadas física e política', false],
+    ['Pilha de camadas, inspetor, permalink', false],
+    ['Indicatriz de Tissot', false],
+  ]},
+  { fase: 'Fase 2', titulo: 'O tempo', estado: 'planejada', itens: [
+    ['Vigência em todo item do acervo', false],
+    ['Controle de ano amarrado às camadas', false],
+    ['Corte sincrônico', false],
+    ['Primeira camada histórica georreferenciada', false],
+  ]},
+  { fase: 'Fase 3', titulo: 'O estudo', estado: 'planejada', itens: [
+    ['Trilhas curadas e baralhos', false],
+    ['Caderno, coleções, exportação', false],
+    ['Índice de lugares e glossário', false],
+    ['Grafo de relações', false],
+  ]},
+];
+---
+<Base titulo="Terra Cognita" descricao="Atlas de estudo do mundo: geografia, história, geopolítica, economia, ideias e arqueologia tratadas como camadas de um mesmo mapa, com fonte por afirmação.">
+
+  <header class="masthead">
+    <Rosa tamanho={62} class="masthead__rosa" />
+    <div>
+      <h1 class="assinatura"><span>Terra</span><span class="b">Cognita</span></h1>
+      <p class="lema">Atlas de estudo do mundo</p>
+    </div>
+  </header>
+
+  <p class="abertura">
+    O mapa histórico marcava o desconhecido como <i class="rot-agua">terra incognita</i>.
+    Um atlas é a operação inversa: o trabalho paciente de transformar o incógnito em
+    conhecido. Geografia, história, geopolítica, economia, ideias e vestígios tratados
+    como camadas de um mesmo mapa — com fonte em toda afirmação.
+  </p>
+
+  <div class="rampa-topo">
+    <RampaHipso />
+  </div>
+
+  <!-- ===================== PRANCHA 01 — AS LENTES ===================== -->
+  <Prancha n={1} titulo="Um só acervo, quatro lentes" meta="O modelo">
+    <p class="verbete">
+      Organizar por disciplina produz dez acervos que repetem os mesmos fatos e divergem
+      com o tempo: a Revolução de 1848 é história, política, economia e geografia urbana
+      ao mesmo tempo. Aqui se guarda <strong>uma coisa só</strong> — item com geometria,
+      vigência, relações e fontes — e se olha de <strong>quatro maneiras</strong>. A
+      disciplina deixa de ser gaveta e passa a ser filtro.
+    </p>
+    <div class="lentes">
+      {lentes.map((l) => (
+        <div class="lente">
+          <h3>{l.nome}</h3>
+          <span class="versalete">{l.chave}</span>
+          <p class="fina">{l.texto}</p>
+        </div>
+      ))}
+    </div>
+  </Prancha>
+
+  <!-- ===================== PRANCHA 02 — O QUE JÁ EXISTE ===================== -->
+  <Prancha n={2} titulo="Estado da construção" meta="Rota de 4 fases">
+    <p class="abertura">
+      Uma prancha excelente antes de duzentas medianas. O molde precisa aguentar conteúdo
+      real antes de escalar — e a única prova disso é um país feito de ponta a ponta.
+    </p>
+    <div class="fases">
+      {estado.map((f) => (
+        <div class="fase" data-estado={f.estado}>
+          <span class="fase__n">{f.fase} · {f.estado}</span>
+          <h3>{f.titulo}</h3>
+          <ul>
+            {f.itens.map(([texto, feito]) => (
+              <li data-feito={feito ? 'sim' : 'nao'}>{texto}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+    <p class="fina" style="margin-top:var(--s-5)">
+      A prancha de prova é o <a href="/regioes/brasil">Brasil</a>: mapa interativo sem
+      servidor de ladrilho, ficha de dados com fonte por afirmação, lista de pendências de
+      verificação e as oito seções do molde de país.
+    </p>
+  </Prancha>
+
+  <!-- ===================== PRANCHA 03 — MÉTODO ===================== -->
+  <Prancha n={3} titulo="Procedência" meta="O que separa fonte de conteúdo solto">
+    <div class="grade">
+      <div class="verbete">
+        <p>
+          A diferença entre este atlas e um blog com mapas bonitos é uma só:
+          <strong>toda afirmação sabe de onde veio</strong>, e o leitor confere em dois
+          cliques. Todo valor exibido é um <i>Fato</i> no acervo — valor, unidade, ano,
+          precisão e fonte. Um número digitado direto no texto quebra o build.
+        </p>
+        <p>
+          Quando um valor ainda não foi conferido contra o documento primário, a prancha
+          diz isso ao leitor em vez de esconder. A lista de incertezas conhecidas é parte
+          do método.
+        </p>
+      </div>
+      <aside>
+        <div class="nota">
+          <strong>Cinco regras editoriais:</strong> fonte por afirmação e não por verbete;
+          disputa mostrada como disputa; incerteza explícita; divergência preservada
+          quando as fontes discordam; erro corrigido com histórico visível, nunca em
+          silêncio.
+        </div>
+      </aside>
+    </div>
+  </Prancha>
+
+  <div class="colofao">
+    <span>Terra Cognita</span>
+    <span>Iowan Old Style · Avenir Next · Menlo</span>
+    <span class="mono">Fase 0</span>
+  </div>
+</Base>
+
+<style>
+  .masthead { display: flex; align-items: flex-start; gap: var(--s-5); flex-wrap: wrap;
+    padding-top: clamp(2.6rem, 6vw, 4.5rem); }
+  .masthead__rosa { color: var(--brass); flex: none; }
+  .assinatura {
+    font-family: var(--serif); font-weight: 400; font-size: var(--t-mark);
+    line-height: .95; letter-spacing: .055em; text-transform: uppercase; margin: 0;
+  }
+  .assinatura span { display: block; }
+  .assinatura .b { color: var(--ink-2); }
+  .lema {
+    font-family: var(--sans); font-size: clamp(.78rem, 2.2vw, 1rem); letter-spacing: .26em;
+    text-transform: uppercase; color: var(--brass); margin-top: var(--s-4);
+  }
+  .abertura { margin-top: var(--s-6); }
+  .rampa-topo { margin-top: var(--s-6); max-width: 46rem; }
+
+  .lentes { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    grid-template-columns: 1fr; margin-top: var(--s-5); }
+  @media (min-width: 640px) { .lentes { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1000px) { .lentes { grid-template-columns: repeat(4, 1fr); } }
+  .lente { background: var(--sheet); padding: var(--s-4); }
+  .lente h3 { font-family: var(--sans); font-size: 1rem; font-weight: 600; }
+  .lente .versalete { display: block; margin: .15rem 0 var(--s-2); color: var(--brass); }
+
+  .fases { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    grid-template-columns: 1fr; margin-top: var(--s-5); }
+  @media (min-width: 700px) { .fases { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1040px) { .fases { grid-template-columns: repeat(4, 1fr); } }
+  .fase { background: var(--sheet); padding: var(--s-4); }
+  .fase__n { font-family: var(--mono); font-size: var(--t-xs); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3); }
+  .fase[data-estado="em curso"] .fase__n { color: var(--brass); }
+  .fase h3 { font-family: var(--sans); font-size: .98rem; font-weight: 600; margin: .35rem 0 var(--s-3); }
+  .fase ul { list-style: none; padding: 0; font-family: var(--sans); font-size: var(--t-sm);
+    line-height: 1.45; color: var(--ink-2); }
+  .fase li { padding: .28rem 0 .28rem 1.2rem; border-top: 1px solid var(--rule-fine); position: relative; }
+  .fase li:first-child { border-top: 0; }
+  .fase li::before {
+    position: absolute; left: 0; top: .28rem;
+    font-family: var(--mono); font-size: .8em;
+  }
+  .fase li[data-feito="sim"]::before { content: "✓"; color: var(--cert-exata); }
+  .fase li[data-feito="nao"]::before { content: "·"; color: var(--ink-3); }
+</style>

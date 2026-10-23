@@ -1,0 +1,20 @@
+---
+/** A prancha: neatline duplo, cartucho de título, número e metadado. */
+interface Props {
+  n: string | number;
+  titulo: string;
+  meta?: string;
+  limpa?: boolean;
+  class?: string;
+}
+const { n, titulo, meta, limpa = false, class: cls = '' } = Astro.props;
+const numero = typeof n === 'number' ? `PR. ${String(n).padStart(2, '0')}` : n;
+---
+<section class:list={['prancha', limpa && 'prancha--limpa', cls]}>
+  <div class="cartucho">
+    <span class="cartucho__n">{numero}</span>
+    <h2 class="cartucho__t">{titulo}</h2>
+    {meta && <span class="cartucho__m">{meta}</span>}
+  </div>
+  <slot />
+</section>

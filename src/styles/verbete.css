@@ -1,0 +1,120 @@
+/* =============================================================================
+   VERBETE — tipografia de leitura longa, rótulo cartográfico e procedência
+   ========================================================================== */
+
+.verbete { max-width: min(var(--medida), 100%); }
+.verbete > * + * { margin-top: var(--s-4); }
+
+.verbete h2 {
+  font-family: var(--sans); font-weight: 600; font-size: var(--t-lg);
+  letter-spacing: -.005em; text-wrap: balance;
+  margin-top: var(--s-6);
+}
+.verbete h3 {
+  font-family: var(--sans); font-weight: 600; font-size: var(--t-xs);
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2);
+  padding-bottom: .4rem; border-bottom: var(--filete) solid var(--rule-fine);
+  margin-top: var(--s-6);
+}
+.verbete h4 { font-family: var(--sans); font-weight: 600; font-size: .95rem; margin-top: var(--s-5); }
+.verbete h2:first-child, .verbete h3:first-child, .verbete h4:first-child { margin-top: 0; }
+.verbete strong { font-weight: 600; }
+.verbete ul, .verbete ol { padding-left: 1.3rem; }
+.verbete li + li { margin-top: var(--s-2); }
+.verbete code { font-family: var(--mono); font-size: .88em; }
+
+.abertura { font-size: var(--t-md); line-height: 1.55; color: var(--ink-2); max-width: min(var(--medida-curta), 100%); }
+.fina { font-size: var(--t-sm); line-height: 1.5; color: var(--ink-3); }
+.versalete { font-family: var(--sans); font-size: var(--t-xs); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-3); }
+
+/* =============================================================================
+   HIERARQUIA DE RÓTULO DO MAPA
+   Sistema real da cartografia: a forma da letra diz a natureza da coisa, antes
+   de qualquer legenda. Vale no mapa e dentro do texto corrido.
+   ========================================================================== */
+.rot-regiao { font-family: var(--sans); letter-spacing: .34em; text-transform: uppercase; color: var(--ink-2); }
+.rot-cidade { font-family: var(--sans); letter-spacing: .01em; }
+.rot-agua   { font-family: var(--serif); font-style: italic; letter-spacing: .17em; color: var(--agua); }
+.rot-cota   { font-family: var(--mono); font-size: .85em; color: var(--h-montanha); font-variant-numeric: tabular-nums; }
+
+/* =============================================================================
+   PROCEDÊNCIA — ver PR. 05
+   Toda afirmação sabe de onde veio. O marcador é discreto mas sempre presente;
+   um dado sem fonte deve parecer errado na tela.
+   ========================================================================== */
+
+/* valor vindo do acervo, nunca digitado no texto */
+.dado { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dado__u { color: var(--ink-3); font-size: .9em; margin-left: .3em; }
+
+/* marcador de fonte: numeral sobrescrito que leva à lista de fontes da prancha */
+.ref {
+  font-family: var(--mono); font-size: .62em; line-height: 1;
+  vertical-align: super; margin-left: .12em;
+  color: var(--brass); text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+.ref:hover { text-decoration: underline; }
+.ref::before { content: "["; } .ref::after { content: "]"; }
+
+/* grau de certeza — semântica, separada do acento */
+.certeza { font-family: var(--mono); font-size: var(--t-xs); letter-spacing: .06em;
+  text-transform: uppercase; padding: .1rem .3rem; border: var(--filete) solid currentColor; }
+.certeza--exata      { color: var(--cert-exata); }
+.certeza--aproximada { color: var(--cert-aproximada); }
+.certeza--estimada   { color: var(--cert-estimada); }
+.certeza--disputada  { color: var(--cert-disputada); }
+
+/* bloco de interpretação: o que é leitura do autor, não consenso de fonte.
+   Marca tipográfica obrigatória — ver PR. 05, "separe as duas camadas". */
+.leitura {
+  border-left: 2px solid var(--survey);
+  background: var(--sunk);
+  padding: var(--s-4) var(--s-4) var(--s-4) var(--s-5);
+  font-size: var(--t-sm); line-height: 1.6;
+  max-width: min(var(--medida), 100%);
+}
+.leitura::before {
+  content: "Leitura";
+  display: block; margin-bottom: var(--s-2);
+  font-family: var(--sans); font-size: var(--t-xs); font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--survey);
+}
+
+/* lista de fontes no pé da prancha */
+.fontes { font-family: var(--sans); font-size: var(--t-sm); }
+.fontes ol { list-style: none; padding: 0; counter-reset: f; }
+.fontes li {
+  display: grid; grid-template-columns: 2.2rem 1fr; gap: var(--s-2);
+  padding: .45rem 0; border-top: var(--filete) solid var(--rule-fine);
+  scroll-margin-top: 5rem;
+}
+.fontes li::before {
+  counter-increment: f; content: "[" counter(f) "]";
+  font-family: var(--mono); font-size: var(--t-xs); color: var(--brass);
+  padding-top: .2rem;
+}
+.fontes li:target { background: var(--sunk); }
+.fontes a { color: var(--ink-2); }
+.fontes .lic { font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-3); letter-spacing: .04em; }
+
+/* lista com marcador losango — usada em listas densas de referência */
+.lista { list-style: none; padding: 0; font-family: var(--sans); font-size: var(--t-sm); line-height: 1.5; }
+.lista li { padding: .42rem 0 .42rem 1.5rem; position: relative;
+  border-bottom: var(--filete) solid var(--rule-fine); max-width: min(var(--medida), 100%); }
+.lista li::before { content: ""; position: absolute; left: .3rem; top: .95em;
+  width: 5px; height: 5px; background: var(--brass); transform: rotate(45deg); }
+.lista li b { font-weight: 600; }
+.lista li span { color: var(--ink-2); }
+
+/* ficha de dados: pares rótulo/valor da prancha de país */
+.ficha { display: grid; gap: 0; }
+.ficha > div {
+  display: grid; grid-template-columns: minmax(7rem, 1fr) auto; gap: var(--s-3);
+  align-items: baseline; padding: .42rem 0;
+  border-bottom: var(--filete) solid var(--rule-fine);
+}
+.ficha > div:last-child { border-bottom: 0; }
+.ficha dt { font-family: var(--sans); font-size: var(--t-sm); color: var(--ink-2); }
+.ficha dd { margin: 0; text-align: right; }

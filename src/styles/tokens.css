@@ -1,0 +1,181 @@
+/* =============================================================================
+   TERRA COGNITA — SISTEMA VISUAL
+   Fonte única de verdade. Nenhum componente declara cor, corpo ou espaço
+   literal; tudo sai daqui. Ver PR. 02 da prancha de identidade.
+
+   Regra dos três estados de tema:
+     :root                                   -> paleta clara completa (prancha diurna)
+     @media (prefers-color-scheme: dark)     -> sobrescreve só tokens, guardado
+       :root:not([data-theme="light"])          para a escolha explícita vencer
+     :root[data-theme="dark"]                -> sobrescreve de novo, para o
+                                                alternador vencer nos dois sentidos
+   ========================================================================== */
+
+:root {
+  /* --- PRANCHA DIURNA: o atlas impresso -------------------------------- */
+  --ground:        #E7E9E3;   /* cartolina, papel frio de viés verde */
+  --sheet:         #F1F2EE;   /* superfície da prancha */
+  --sunk:          #DDE0D9;   /* recuo: cabeçalho de tabela, caixa de legenda */
+  --ink:           #101A21;   /* preto-azulado de impressão */
+  --ink-2:         #3B4A54;   /* texto secundário */
+  --ink-3:         #6B7A82;   /* rótulo, legenda, metadado */
+  --rule:          #B6BDB6;   /* filete principal */
+  --rule-fine:     #C9CFC8;   /* filete capilar */
+  --neat:          #1B2730;   /* neatline: a moldura da prancha */
+  --brass:         #8A5A0C;   /* acento único — escurecido para contraste no papel */
+  --brass-soft:    #C9922E;   /* acento em superfície, não em texto */
+  --survey:        #A8206A;   /* magenta de agrimensor: só marca ativa e foco */
+  --graticule:     rgba(16, 26, 33, .055);
+  --halo:          #F1F2EE;   /* halo de rótulo sobre o mapa */
+  --overlay:       rgba(231, 233, 227, .88);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* --- PRANCHA NOTURNA: cartografia de leitura noturna --------------- */
+    --ground:      #0E1A24;   /* azul batimétrico profundo, nunca preto */
+    --sheet:       #15242F;
+    --sunk:        #0A141C;
+    --ink:         #DCE4E6;
+    --ink-2:       #A3B4BA;
+    --ink-3:       #71858D;
+    --rule:        #2C4250;
+    --rule-fine:   #223642;
+    --neat:        #365062;
+    --brass:       #D9972B;   /* acento aberto: a lâmpada sobre a mesa de mapas */
+    --brass-soft:  #8A6422;
+    --survey:      #DE4A96;
+    --graticule:   rgba(220, 228, 230, .06);
+    --halo:        #0E1A24;
+    --overlay:     rgba(14, 26, 36, .9);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:#0E1A24; --sheet:#15242F; --sunk:#0A141C;
+  --ink:#DCE4E6; --ink-2:#A3B4BA; --ink-3:#71858D;
+  --rule:#2C4250; --rule-fine:#223642; --neat:#365062;
+  --brass:#D9972B; --brass-soft:#8A6422; --survey:#DE4A96;
+  --graticule:rgba(220,228,230,.06); --halo:#0E1A24;
+  --overlay:rgba(14,26,36,.9);
+}
+
+:root {
+  /* =========================================================================
+     RAMPA HIPSOMÉTRICA — paleta de dados
+     Idêntica nos dois temas: a cor da altitude é um dado, não decoração.
+     Ordenada e verificada para manter ordem visível em deuteranopia/protanopia.
+     ====================================================================== */
+  --h-abismo:     #0A2133;   /* < -4000 m */
+  --h-fossa:      #0E2A3E;
+  --h-pelagico:   #123249;
+  --h-talude:     #1C4A61;
+  --h-plataforma: #2E6678;   /* 0 m */
+  --h-planicie:   #3E6B4E;   /* + 0 m */
+  --h-baixada:    #557A4E;
+  --h-colina:     #6E8A4E;
+  --h-planalto:   #8A9551;
+  --h-estepe:     #A3A054;
+  --h-arido:      #C9A05C;
+  --h-serra:      #B9793F;
+  --h-montanha:   #9A5A33;
+  --h-rocha:      #8A6A5C;
+  --h-neve:       #D9D4CC;   /* > 5000 m */
+
+  /* hidrografia — água e todo rótulo de água */
+  --agua:         #2E6678;
+  --agua-rasa:    #3C7F8C;
+
+  /* =========================================================================
+     TINTAS POLÍTICAS — categoria, nunca quantidade
+     Quatro tons dessaturados: o teorema das quatro cores resolve qualquer
+     mapa político sem que dois vizinhos repitam tinta.
+     ====================================================================== */
+  --tinta-1: #7C9A8E;
+  --tinta-2: #C2A46A;
+  --tinta-3: #A8766E;
+  --tinta-4: #8290A8;
+
+  /* =========================================================================
+     SEMÂNTICA DE PROCEDÊNCIA — separada do acento, nunca decorativa
+     Comunica o grau de certeza de um dado. Ver PR. 03 e PR. 05.
+     ====================================================================== */
+  --cert-exata:       #4F7A5C;   /* data documentada, fronteira firme */
+  --cert-aproximada:  #B5892F;   /* filete pontilhado */
+  --cert-estimada:    #A8766E;   /* gradiente, sem limite definido */
+  --cert-disputada:   #A8206A;   /* hachura cruzada + rótulo explícito */
+
+  /* =========================================================================
+     TIPOGRAFIA — três papéis
+     Faces do sistema, sem webfont: fallback silencioso é pior que a 2ª escolha.
+     ====================================================================== */
+  --serif: "Iowan Old Style", Charter, Georgia, "Times New Roman", serif;
+  --sans:  "Avenir Next", Optima, "Gill Sans", "Gill Sans MT", system-ui, sans-serif;
+  --mono:  Menlo, "SF Mono", ui-monospace, "Courier New", monospace;
+
+  /* escala de corpo — razão 1.2, ancorada em 17px */
+  --t-xs:   .68rem;
+  --t-sm:   .82rem;
+  --t-base: 1rem;
+  --t-md:   1.14rem;
+  --t-lg:   1.3rem;
+  --t-xl:   1.62rem;
+  --t-2xl:  2.05rem;
+  --t-3xl:  clamp(2.3rem, 5vw, 3.3rem);
+  --t-mark: clamp(2.5rem, 8.2vw, 5.4rem);   /* assinatura */
+
+  /* espaçamento — passo de 4px */
+  --s-1: .25rem;  --s-2: .5rem;   --s-3: .75rem;  --s-4: 1rem;
+  --s-5: 1.5rem;  --s-6: 2rem;    --s-7: 3rem;    --s-8: 4rem;
+  --s-plate: clamp(1.5rem, 3.4vw, 3rem);     /* respiro interno da prancha */
+  --s-pad:   clamp(1.15rem, 4vw, 3.25rem);   /* respiro da folha */
+  --s-gap:   clamp(1.6rem, 3.5vw, 3rem);     /* calha da grade de margem */
+
+  /* medida de leitura */
+  --medida: 64ch;
+  --medida-curta: 58ch;
+
+  /* geometria — raio zero em tudo: prancha de atlas não tem canto arredondado */
+  --raio: 0;
+  --filete: 1px;
+  --neat-offset: 4px;
+  --malha: 72px;          /* passo do graticulado de fundo */
+  --tick: 36px;           /* passo das marcas de borda */
+
+  /* movimento — ver PR. 02; movimento só onde ele informa */
+  --mov-camada: 240ms;    /* esmaecimento entre camadas */
+  --mov-voo: 700ms;       /* voo até um lugar */
+  --ease-globo: cubic-bezier(.22, .61, .36, 1);   /* globo parando, nunca elástico */
+
+  --z-mapa: 1; --z-legenda: 10; --z-painel: 20; --z-topo: 30;
+}
+
+/* =============================================================================
+   RESET MÍNIMO
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(16px, .55vw + 14.6px, 17.5px);
+  line-height: 1.62;
+  /* o graticulado corre sob a folha inteira: uma carta contínua */
+  background-image:
+    linear-gradient(var(--graticule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--graticule) 1px, transparent 1px);
+  background-size: var(--malha) var(--malha), var(--malha) var(--malha);
+}
+
+img, svg, canvas { display: block; max-width: 100%; }
+::selection { background: var(--brass); color: var(--ground); }
+:focus-visible { outline: 2px solid var(--survey); outline-offset: 3px; }
+a { color: inherit; text-decoration-color: var(--brass); text-underline-offset: .2em; }
+button { font: inherit; color: inherit; }

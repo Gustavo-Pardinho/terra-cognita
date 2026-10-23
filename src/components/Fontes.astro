@@ -1,0 +1,31 @@
+---
+/** Lista de fontes no pé da prancha, numerada na ordem em que os dados citam. */
+import type { Registro } from '../lib/acervo';
+interface Props { r: Registro; titulo?: string }
+const { r, titulo = 'Fontes desta prancha' } = Astro.props;
+const fontes = r.fontes();
+---
+<div class="fontes">
+  <h3>{titulo}</h3>
+  <ol>
+    {fontes.map((f, i) => (
+      <li id={`fonte-${i + 1}`}>
+        <div>
+          {f.url ? <a href={f.url} rel="noopener noreferrer" target="_blank">{f.titulo}</a> : f.titulo}
+          {f.autor && <span>. {f.autor}</span>}
+          {f.nota && <span class="fina"> — {f.nota}</span>}
+          <div class="lic">
+            {f.licenca}{f.acessoEm && ` · acesso em ${f.acessoEm.split('-').reverse().join('/')}`}
+          </div>
+        </div>
+      </li>
+    ))}
+  </ol>
+</div>
+<style>
+  .fontes h3 {
+    font-family: var(--sans); font-size: var(--t-xs); font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+    padding-bottom: .4rem; border-bottom: 1px solid var(--rule); margin-bottom: var(--s-2);
+  }
+</style>

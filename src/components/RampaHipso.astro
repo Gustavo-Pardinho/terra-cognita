@@ -1,0 +1,19 @@
+---
+/** A rampa hipsométrica como legenda. Idêntica nos dois temas: cor de altitude é dado. */
+interface Props { eixo?: boolean }
+const { eixo = true } = Astro.props;
+const faixas = [
+  'abismo','fossa','pelagico','talude','plataforma','planicie','baixada',
+  'colina','planalto','estepe','arido','serra','montanha','rocha','neve',
+];
+---
+<div>
+  <div class="rampa" aria-hidden="true">
+    {faixas.map((f) => <i style={`background:var(--h-${f})`}></i>)}
+  </div>
+  {eixo && (
+    <div class="rampa__eixo">
+      <span>−6000 m</span><span>0</span><span>+1000</span><span>+3000</span><span>+6000 m</span>
+    </div>
+  )}
+</div>

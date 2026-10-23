@@ -1,0 +1,337 @@
+---
+/* =============================================================================
+   MAPA-PRANCHA — a lente Mapa, em escala de prancha
+   Tudo vem de GeoJSON estático em /dados. Nenhum servidor de ladrilho e nenhum
+   servidor de glifo: os rótulos são marcadores HTML, o que permite usar a
+   hierarquia tipográfica real do atlas (versal espaçada / redonda / itálico
+   serifado em azul de hidrografia) — ver PR. 02.
+   ========================================================================== */
+interface Props { altura?: string }
+const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
+---
+<figure class="mapa" style={`--altura-mapa:${altura}`}>
+  <div class="mapa__campo" id="campo" role="application"
+       aria-label="Mapa do Brasil: relevo político, hidrografia e cidades. Use as setas para deslocar e +/− para aproximar."></div>
+
+  <div class="mapa__controles">
+    <fieldset>
+      <legend>Camadas</legend>
+      <label><input type="checkbox" data-camada="vizinhos" checked /> Vizinhos</label>
+      <label><input type="checkbox" data-camada="hidrografia" checked /> Hidrografia</label>
+      <label><input type="checkbox" data-camada="graticulado" checked /> Graticulado</label>
+      <label><input type="checkbox" data-camada="rotulos" checked /> Rótulos</label>
+    </fieldset>
+    <fieldset>
+      <legend>Projeção</legend>
+      <label><input type="radio" name="proj" value="mercator" checked /> Mercator</label>
+      <label><input type="radio" name="proj" value="globe" /> Ortográfica</label>
+    </fieldset>
+  </div>
+
+  <div class="mapa__legenda legenda">
+    <h4>Legenda</h4>
+    <ul>
+      <li><i style="background:var(--tinta-1)"></i> Brasil</li>
+      <li><i style="background:var(--sunk);border-color:var(--rule)"></i> Países limítrofes</li>
+      <li><i class="linha" style="background:var(--agua)"></i> Hidrografia principal</li>
+      <li><i class="ponto"></i> Capital federal</li>
+    </ul>
+  </div>
+
+  <figcaption class="mapa__pe">
+    <span class="escala"><span class="escala__barras"><i></i><i></i><i></i><i></i></span><span id="escala-txt">—</span></span>
+    <span class="mapa__coord mono" id="coord">—</span>
+  </figcaption>
+</figure>
+
+<style>
+  .mapa { position: relative; border: 1px solid var(--neat); background: var(--h-plataforma); margin: 0; }
+  .mapa__campo { width: 100%; height: var(--altura-mapa); }
+  .mapa__campo:focus-visible { outline: 2px solid var(--survey); outline-offset: -2px; }
+
+  .mapa__controles {
+    position: absolute; top: var(--s-3); left: var(--s-3); z-index: var(--z-painel);
+    display: flex; flex-direction: column; gap: var(--s-2);
+  }
+  .mapa__controles fieldset {
+    border: 1px solid var(--rule); background: var(--overlay);
+    padding: var(--s-2) var(--s-3); margin: 0;
+    font-family: var(--sans); font-size: var(--t-xs);
+    display: flex; flex-direction: column; gap: .2rem;
+  }
+  .mapa__controles legend {
+    font-family: var(--sans); font-size: .6rem; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+    padding: 0 .3rem; background: var(--sheet);
+  }
+  .mapa__controles label { display: flex; align-items: center; gap: .4rem; cursor: pointer; color: var(--ink-2); }
+  .mapa__controles input { accent-color: var(--brass); margin: 0; }
+
+  .mapa__legenda {
+    position: absolute; right: var(--s-3); bottom: calc(var(--s-6) + var(--s-3)); z-index: var(--z-legenda);
+    background: var(--overlay); max-width: 15rem;
+  }
+  .mapa__legenda ul { list-style: none; padding: 0; margin: 0; font-family: var(--sans); font-size: var(--t-xs); }
+  .mapa__legenda li { display: flex; align-items: center; gap: .5rem; padding: .18rem 0; color: var(--ink-2); }
+  .mapa__legenda i { width: 16px; height: 10px; border: 1px solid var(--neat); flex: none; }
+  .mapa__legenda i.linha { height: 2px; border: 0; }
+  .mapa__legenda i.ponto {
+    width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--survey); background: var(--sheet);
+  }
+
+  .mapa__pe {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
+    border-top: 1px solid var(--neat); background: var(--sheet);
+    padding: .45rem var(--s-3); font-family: var(--mono); font-size: .62rem; color: var(--ink-3);
+  }
+  .mapa__coord { letter-spacing: .04em; }
+
+  /* --- rótulos: a hierarquia tipográfica do atlas, como marcadores HTML --- */
+  :global(.rot) {
+    display: block; white-space: nowrap; pointer-events: none;
+    text-shadow: 0 0 2px var(--halo), 0 0 4px var(--halo), 0 0 6px var(--halo);
+    transition: opacity var(--mov-camada) var(--ease-globo);
+  }
+  :global(.rot--oculto) { opacity: 0; }
+  :global(.rot--cidade) { font-family: var(--sans); color: var(--ink); letter-spacing: .01em; }
+  :global(.rot--capital) { font-family: var(--sans); font-weight: 600; color: var(--ink); }
+  :global(.rot--capital)::before {
+    content: ""; display: inline-block; width: 7px; height: 7px; margin-right: .35rem;
+    border: 2px solid var(--survey); border-radius: 50%; background: var(--sheet);
+    vertical-align: middle;
+  }
+  :global(.rot--agua) {
+    font-family: var(--serif); font-style: italic; letter-spacing: .17em;
+    color: var(--agua); font-size: .8rem;
+  }
+  :global(.rot--regiao) {
+    font-family: var(--sans); letter-spacing: .34em; text-transform: uppercase;
+    color: var(--ink-2); font-size: .72rem;
+  }
+  :global(.maplibregl-ctrl-attrib) { font-family: var(--sans); font-size: 10px; }
+</style>
+
+<script>
+  import maplibregl from 'maplibre-gl';
+  import 'maplibre-gl/dist/maplibre-gl.css';
+
+  const campo = document.getElementById('campo');
+  if (campo) iniciar(campo);
+
+  function iniciar(campo: HTMLElement) {
+    const css = () => getComputedStyle(document.documentElement);
+    const tok = (n: string) => css().getPropertyValue(n).trim();
+
+    const mapa = new maplibregl.Map({
+      container: campo,
+      center: [-52.5, -14.5],
+      zoom: 3.1,
+      minZoom: 2,
+      maxZoom: 9,
+      attributionControl: { customAttribution: 'Natural Earth · domínio público' },
+      style: {
+        version: 8,
+        // sem glyphs e sem sprite: não há texto nem ícone renderizado pelo motor
+        sources: {
+          vizinhos:    { type: 'geojson', data: '/dados/vizinhos.geojson' },
+          brasil:      { type: 'geojson', data: '/dados/brasil.geojson' },
+          hidrografia: { type: 'geojson', data: '/dados/hidrografia.geojson' },
+          graticulado: { type: 'geojson', data: '/dados/graticulado.geojson' },
+        },
+        layers: [
+          { id: 'oceano', type: 'background', paint: { 'background-color': tok('--h-plataforma') } },
+          { id: 'graticulado', type: 'line', source: 'graticulado',
+            paint: { 'line-color': tok('--ink-3'), 'line-width': 0.5, 'line-opacity': 0.35 } },
+          { id: 'vizinhos-area', type: 'fill', source: 'vizinhos',
+            paint: { 'fill-color': tok('--sunk'), 'fill-opacity': 0.9 } },
+          { id: 'vizinhos-linha', type: 'line', source: 'vizinhos',
+            paint: { 'line-color': tok('--rule'), 'line-width': 0.6 } },
+          { id: 'brasil-area', type: 'fill', source: 'brasil',
+            paint: { 'fill-color': tok('--tinta-1'), 'fill-opacity': 0.92 } },
+          { id: 'hidrografia-linha', type: 'line', source: 'hidrografia',
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
+            paint: {
+              'line-color': tok('--agua'),
+              'line-opacity': 0.85,
+              'line-width': ['interpolate', ['linear'], ['zoom'], 2, 0.4, 6, 2.2],
+            } },
+          { id: 'brasil-linha', type: 'line', source: 'brasil',
+            paint: { 'line-color': tok('--neat'), 'line-width': 1.3 } },
+        ],
+      },
+    });
+
+    // gancho de inspeção durante a construção; sai antes da publicação
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__mapa = mapa;
+
+    mapa.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
+    mapa.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+    campo.querySelector<HTMLElement>('.maplibregl-canvas')?.setAttribute('tabindex', '0');
+
+    /* --- repintura ao trocar de tema: o mapa segue os tokens --------------- */
+    function repintar() {
+      const def: Array<[string, string, string]> = [
+        ['oceano', 'background-color', '--h-plataforma'],
+        ['graticulado', 'line-color', '--ink-3'],
+        ['vizinhos-area', 'fill-color', '--sunk'],
+        ['vizinhos-linha', 'line-color', '--rule'],
+        ['brasil-area', 'fill-color', '--tinta-1'],
+        ['hidrografia-linha', 'line-color', '--agua'],
+        ['brasil-linha', 'line-color', '--neat'],
+      ];
+      for (const [camada, prop, token] of def) {
+        if (mapa.getLayer(camada)) mapa.setPaintProperty(camada, prop as never, tok(token));
+      }
+    }
+    new MutationObserver(repintar).observe(document.documentElement, { attributeFilter: ['data-theme'] });
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repintar);
+
+    /* --- rótulos com supressão de colisão ---------------------------------
+       Atlas impresso não deixa rótulo sobrepor rótulo. Aqui: ordem por
+       importância, e quem colide com um já aceito fica oculto. */
+    type Rotulo = { el: HTMLElement; lngLat: [number, number]; peso: number };
+    const rotulos: Rotulo[] = [];
+
+    function criarRotulo(nome: string, lngLat: [number, number], classe: string, peso: number, corpo: number) {
+      // Dois elementos de propósito: o MapLibre escreve `style.opacity` inline no
+      // elemento do marcador (oclusão em projeção de globo), e estilo inline vence
+      // classe. O invólucro é dele; o rótulo estilizado é nosso.
+      const inv = document.createElement('div');
+      const el = document.createElement('span');
+      el.className = `rot ${classe}`;
+      el.textContent = nome;
+      el.style.fontSize = `${corpo}px`;
+      inv.appendChild(el);
+      new maplibregl.Marker({ element: inv, anchor: 'left', offset: [6, 0] }).setLngLat(lngLat).addTo(mapa);
+      rotulos.push({ el, lngLat, peso });
+    }
+
+    let agendado = 0;
+    function resolverColisoes() {
+      agendado = 0;
+      if (!mostrarRotulos) return;
+      const campoBox = campo.getBoundingClientRect();
+      const aceitos: DOMRect[] = [];
+      const ordenados = [...rotulos].sort((a, b) => b.peso - a.peso);
+      for (const r of ordenados) {
+        r.el.classList.remove('rot--oculto');
+        const cx = r.el.getBoundingClientRect();
+        // marcador ainda não posicionado pelo motor: não decide nada neste quadro
+        if (cx.width === 0) continue;
+        // fora do campo da prancha: não disputa espaço com quem está dentro
+        const fora = cx.right < campoBox.left || cx.left > campoBox.right
+                  || cx.bottom < campoBox.top || cx.top > campoBox.bottom;
+        if (fora) { r.el.classList.add('rot--oculto'); continue; }
+        const colide = aceitos.some((a) =>
+          !(cx.right < a.left - 3 || cx.left > a.right + 3 || cx.bottom < a.top - 2 || cx.top > a.bottom + 2));
+        if (colide) r.el.classList.add('rot--oculto');
+        else aceitos.push(cx);
+      }
+    }
+    const agendarColisoes = () => { if (!agendado) agendado = requestAnimationFrame(resolverColisoes); };
+
+    let mostrarRotulos = true;
+
+    /* --- carga dos rótulos: cidades do acervo + hidrografia nomeada -------- */
+    (async () => {
+      try {
+        const [cidades, hidro] = await Promise.all([
+          fetch('/dados/cidades.geojson').then((r) => r.json()),
+          fetch('/dados/hidrografia.geojson').then((r) => r.json()),
+        ]);
+
+        // cidade: redonda, corpo pela população — a hierarquia clássica
+        for (const f of cidades.features.slice(0, 30)) {
+          const pop: number = f.properties.pop ?? 0;
+          const corpo = pop > 8e6 ? 15 : pop > 3e6 ? 13 : pop > 1e6 ? 12 : 10.5;
+          const capital = f.properties.nome === 'Brasilia' || f.properties.capital === 1;
+          criarRotulo(
+            f.properties.nome === 'Brasilia' ? 'Brasília' : f.properties.nome,
+            f.geometry.coordinates as [number, number],
+            capital ? 'rot--capital' : 'rot--cidade',
+            capital ? 1e9 : pop,
+            corpo,
+          );
+        }
+
+        // água: itálico serifado espaçado, no ponto médio do traçado
+        const vistos = new Set<string>();
+        for (const f of hidro.features) {
+          const nome: string = f.properties.nome;
+          if (!nome || vistos.has(nome)) continue;
+          vistos.add(nome);
+          const cs = (f.geometry.type === 'LineString' ? f.geometry.coordinates : f.geometry.coordinates.flat()) as [number, number][];
+          const meio = cs[Math.floor(cs.length / 2)];
+          if (!meio) continue;
+          const ordem = Number(f.properties.ordem) || 1;
+          criarRotulo(nome, meio, 'rot--agua', 5e4 + ordem * 1e4, 12);
+        }
+
+        requestAnimationFrame(() => requestAnimationFrame(agendarColisoes));
+      } catch (e) {
+        console.error('[mapa] falha ao carregar rótulos', e);
+      }
+    })();
+
+    mapa.on('move', agendarColisoes);
+    mapa.on('zoom', agendarColisoes);
+    mapa.on('load', agendarColisoes);
+    mapa.on('idle', agendarColisoes);   // motor terminou de posicionar: medida confiável
+    mapa.on('error', (e) => console.error('[mapa]', e.error?.message ?? e));
+
+    /* --- leitura de coordenada sob o cursor -------------------------------- */
+    const coord = document.getElementById('coord');
+    mapa.on('mousemove', (e) => {
+      if (!coord) return;
+      const { lng, lat } = e.lngLat;
+      const g = (v: number, p: string, n: string) => {
+        const a = Math.abs(v), d = Math.floor(a), m = Math.round((a - d) * 60);
+        return `${d}°${String(m).padStart(2, '0')}′${v >= 0 ? p : n}`;
+      };
+      coord.textContent = `${g(lat, 'N', 'S')} ${g(lng, 'L', 'O')}`;
+    });
+    mapa.on('mouseout', () => { if (coord) coord.textContent = '—'; });
+
+    const escalaTxt = document.getElementById('escala-txt');
+    const atualizarEscala = () => {
+      if (!escalaTxt) return;
+      const m = 156543.03392 * Math.cos((mapa.getCenter().lat * Math.PI) / 180) / 2 ** mapa.getZoom();
+      const km = Math.round((m * 104) / 1000);  // 104 px = largura das 4 barras
+      escalaTxt.textContent = `0 ——— ${km.toLocaleString('pt-BR')} km`;
+    };
+    mapa.on('zoom', atualizarEscala);
+    mapa.on('load', atualizarEscala);
+
+    /* --- controles de camada ----------------------------------------------- */
+    const alvos: Record<string, string[]> = {
+      vizinhos: ['vizinhos-area', 'vizinhos-linha'],
+      hidrografia: ['hidrografia-linha'],
+      graticulado: ['graticulado'],
+    };
+    document.querySelectorAll<HTMLInputElement>('[data-camada]').forEach((cx) => {
+      cx.addEventListener('change', () => {
+        const chave = cx.dataset.camada!;
+        if (chave === 'rotulos') {
+          mostrarRotulos = cx.checked;
+          rotulos.forEach((r) => r.el.classList.toggle('rot--oculto', !cx.checked));
+          if (cx.checked) agendarColisoes();
+          return;
+        }
+        for (const camada of alvos[chave] ?? []) {
+          if (mapa.getLayer(camada)) {
+            mapa.setLayoutProperty(camada, 'visibility', cx.checked ? 'visible' : 'none');
+          }
+        }
+      });
+    });
+
+    /* --- troca de projeção: a aula de distorção da PR. 04 -------------------- */
+    document.querySelectorAll<HTMLInputElement>('input[name="proj"]').forEach((rd) => {
+      rd.addEventListener('change', () => {
+        if (!rd.checked) return;
+        mapa.setProjection({ type: rd.value as 'mercator' | 'globe' });
+        agendarColisoes();
+      });
+    });
+  }
+</script>

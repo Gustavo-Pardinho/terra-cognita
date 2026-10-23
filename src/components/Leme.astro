@@ -1,0 +1,36 @@
+---
+import Rosa from './Rosa.astro';
+const aqui = Astro.url.pathname.replace(/\/$/, '') || '/';
+const secoes = [
+  { href: '/atlas',    rotulo: 'O Atlas' },
+  { href: '/tempo',    rotulo: 'Tempo' },
+  { href: '/regioes',  rotulo: 'Regiões' },
+  { href: '/verbetes', rotulo: 'Verbetes' },
+  { href: '/metodo',   rotulo: 'Método' },
+];
+---
+<header class="leme">
+  <a href="/" class="leme__marca"><Rosa tamanho={22} /> Terra Cognita</a>
+  <nav aria-label="Seções do atlas">
+    {secoes.map((s) => (
+      <a href={s.href} aria-current={aqui.startsWith(s.href) ? 'page' : undefined}>{s.rotulo}</a>
+    ))}
+  </nav>
+  <div class="leme__fim">
+    <button class="tema" type="button" data-tema aria-live="polite">Tema</button>
+  </div>
+</header>
+<script>
+  const b = document.querySelector<HTMLButtonElement>('[data-tema]');
+  const raiz = document.documentElement;
+  const escuroDoSistema = () => matchMedia('(prefers-color-scheme: dark)').matches;
+  const atual = () => raiz.dataset.theme ?? (escuroDoSistema() ? 'dark' : 'light');
+  const rotular = () => { if (b) b.textContent = atual() === 'dark' ? 'Noturna' : 'Diurna'; };
+  b?.addEventListener('click', () => {
+    const proximo = atual() === 'dark' ? 'light' : 'dark';
+    raiz.dataset.theme = proximo;
+    try { localStorage.setItem('tc-tema', proximo); } catch { /* sem armazenamento */ }
+    rotular();
+  });
+  rotular();
+</script>

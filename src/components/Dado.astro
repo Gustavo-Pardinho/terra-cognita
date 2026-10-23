@@ -1,0 +1,25 @@
+---
+/** Um valor vindo do acervo, com a sua fonte. Nunca um número digitado no texto. */
+import { formatar, type Registro } from '../lib/acervo';
+
+interface Props {
+  r: Registro;
+  k: string;
+  /** omite a unidade, para quando ela já está no rótulo da ficha */
+  semUnidade?: boolean;
+  /** mostra o ano de referência entre parênteses */
+  comAno?: boolean;
+}
+const { r, k, semUnidade = false, comAno = false } = Astro.props;
+const f = r.exigir(k);
+const ref = r.ref(f.fonte);
+const titulo = [
+  f.ano ? `Ano de referência: ${f.ano}` : null,
+  f.precisao ? `Precisão: ${f.precisao}` : null,
+  f.nota,
+].filter(Boolean).join(' · ');
+---
+<span class="dado" title={titulo || undefined}>{formatar(f.valor, f.formato)}{
+  !semUnidade && f.unidade && <span class="dado__u">{f.unidade}</span>
+}{comAno && f.ano && <span class="dado__u">({f.ano})</span>}</span><a
+  class="ref" href={`#fonte-${ref}`} aria-label={`Fonte ${ref}`}>{ref}</a>

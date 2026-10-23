@@ -1,0 +1,51 @@
+---
+import '../styles/tokens.css';
+import '../styles/prancha.css';
+import '../styles/verbete.css';
+import Leme from '../components/Leme.astro';
+
+interface Props {
+  titulo: string;
+  descricao: string;
+  /** largura de folha ampliada, para pranchas de mapa */
+  larga?: boolean;
+}
+const { titulo, descricao, larga = false } = Astro.props;
+const completo = titulo === 'Terra Cognita' ? titulo : `${titulo} · Terra Cognita`;
+---
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{completo}</title>
+  <meta name="description" content={descricao} />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <!-- carimba o tema antes da primeira pintura: sem piscada -->
+  <script is:inline>
+    (function () {
+      try {
+        var t = localStorage.getItem('tc-tema');
+        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+      } catch (e) { /* armazenamento bloqueado: segue o tema do sistema */ }
+    })();
+  </script>
+</head>
+<body>
+  <a href="#conteudo" class="pular">Pular para o conteúdo</a>
+  <Leme />
+  <main id="conteudo" class={larga ? 'folha folha--larga' : 'folha'}>
+    <slot />
+  </main>
+  <style>
+    .pular {
+      position: absolute; left: -9999px; top: 0; z-index: 100;
+      background: var(--sheet); color: var(--ink);
+      border: 1px solid var(--neat); padding: var(--s-3) var(--s-4);
+      font-family: var(--sans); font-size: var(--t-sm);
+    }
+    .pular:focus { left: var(--s-4); top: var(--s-4); }
+  </style>
+</body>
+</html>

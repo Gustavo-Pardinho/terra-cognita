@@ -1,0 +1,23 @@
+---
+/** Rosa dos ventos de 16 pontas — a marca. Nunca aparece sozinha sem o texto. */
+interface Props { tamanho?: number; class?: string }
+const { tamanho = 62, class: cls = '' } = Astro.props;
+---
+<svg class={cls} viewBox="0 0 100 100" width={tamanho} height={tamanho} aria-hidden="true" fill="none">
+  <g stroke="currentColor" stroke-width="1">
+    <circle cx="50" cy="50" r="46" /><circle cx="50" cy="50" r="35" />
+  </g>
+  <g fill="currentColor" opacity=".45">
+    <polygon points="50,22 54,50 50,54 46,50" transform="rotate(45 50 50)" />
+    <polygon points="50,22 54,50 50,54 46,50" transform="rotate(135 50 50)" />
+    <polygon points="50,22 54,50 50,54 46,50" transform="rotate(225 50 50)" />
+    <polygon points="50,22 54,50 50,54 46,50" transform="rotate(315 50 50)" />
+  </g>
+  <g fill="currentColor">
+    <polygon points="50,6 55,48 50,52 45,48" />
+    <polygon points="50,6 55,48 50,52 45,48" transform="rotate(90 50 50)" />
+    <polygon points="50,6 55,48 50,52 45,48" transform="rotate(180 50 50)" />
+    <polygon points="50,6 55,48 50,52 45,48" transform="rotate(270 50 50)" />
+  </g>
+  <circle cx="50" cy="50" r="3" fill="currentColor" />
+</svg>

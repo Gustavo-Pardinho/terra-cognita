@@ -1,0 +1,8 @@
+---
+interface Props { km?: number; razao?: string }
+const { km = 500, razao = '1:25 000 000' } = Astro.props;
+---
+<span class="escala">
+  <span class="escala__barras"><i></i><i></i><i></i><i></i></span>
+  <span>0 ——— {km.toLocaleString('pt-BR')} km · {razao}</span>
+</span>
