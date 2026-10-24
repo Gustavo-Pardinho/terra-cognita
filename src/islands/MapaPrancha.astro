@@ -1,22 +1,25 @@
 ---
 /* =============================================================================
    MAPA-PRANCHA — a lente Mapa, em escala de prancha
-   Tudo vem de GeoJSON estático em /dados. Nenhum servidor de ladrilho e nenhum
-   servidor de glifo: os rótulos são marcadores HTML, o que permite usar a
-   hierarquia tipográfica real do atlas (versal espaçada / redonda / itálico
-   serifado em azul de hidrografia) — ver PR. 02.
+   Camadas: relevo hipsométrico sombreado (raster estático assado de um DEM
+   real), graticulado, véu sobre os vizinhos, limites estaduais, hidrografia e
+   limite nacional. Rótulos são marcadores HTML, para usar a hierarquia
+   tipográfica real do atlas — ver PR. 02.
+
+   Nenhum servidor de ladrilho e nenhum servidor de glifo em tempo de execução.
    ========================================================================== */
 interface Props { altura?: string }
-const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
+const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
 ---
 <figure class="mapa" style={`--altura-mapa:${altura}`}>
   <div class="mapa__campo" id="campo" role="application"
-       aria-label="Mapa do Brasil: relevo político, hidrografia e cidades. Use as setas para deslocar e +/− para aproximar."></div>
+       aria-label="Mapa físico-político do Brasil: relevo hipsométrico sombreado, limites estaduais, hidrografia principal e cidades. Use as setas para deslocar e +/− para aproximar."></div>
 
   <div class="mapa__controles">
     <fieldset>
       <legend>Camadas</legend>
-      <label><input type="checkbox" data-camada="vizinhos" checked /> Vizinhos</label>
+      <label><input type="checkbox" data-camada="relevo" checked /> Relevo</label>
+      <label><input type="checkbox" data-camada="ufs" checked /> Estados</label>
       <label><input type="checkbox" data-camada="hidrografia" checked /> Hidrografia</label>
       <label><input type="checkbox" data-camada="graticulado" checked /> Graticulado</label>
       <label><input type="checkbox" data-camada="rotulos" checked /> Rótulos</label>
@@ -29,12 +32,19 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
   </div>
 
   <div class="mapa__legenda legenda">
-    <h4>Legenda</h4>
+    <h4>Altitude</h4>
+    <div class="rampa rampa--mapa" aria-hidden="true">
+      <i style="background:var(--h-planicie)"></i><i style="background:var(--h-baixada)"></i>
+      <i style="background:var(--h-colina)"></i><i style="background:var(--h-planalto)"></i>
+      <i style="background:var(--h-estepe)"></i><i style="background:var(--h-arido)"></i>
+      <i style="background:var(--h-serra)"></i><i style="background:var(--h-montanha)"></i>
+      <i style="background:var(--h-rocha)"></i><i style="background:var(--h-neve)"></i>
+    </div>
+    <div class="rampa__eixo"><span>0</span><span>1200</span><span>+4000 m</span></div>
     <ul>
-      <li><i style="background:var(--tinta-1)"></i> Brasil</li>
-      <li><i style="background:var(--sunk);border-color:var(--rule)"></i> Países limítrofes</li>
       <li><i class="linha" style="background:var(--agua)"></i> Hidrografia principal</li>
       <li><i class="ponto"></i> Capital federal</li>
+      <li><i class="veu"></i> Fora do território</li>
     </ul>
   </div>
 
@@ -45,7 +55,7 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
 </figure>
 
 <style>
-  .mapa { position: relative; border: 1px solid var(--neat); background: var(--h-plataforma); margin: 0; }
+  .mapa { position: relative; border: 1px solid var(--neat); background: var(--h-pelagico); margin: 0; }
   .mapa__campo { width: 100%; height: var(--altura-mapa); }
   .mapa__campo:focus-visible { outline: 2px solid var(--survey); outline-offset: -2px; }
 
@@ -71,10 +81,14 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
     position: absolute; right: var(--s-3); bottom: calc(var(--s-6) + var(--s-3)); z-index: var(--z-legenda);
     background: var(--overlay); max-width: 15rem;
   }
-  .mapa__legenda ul { list-style: none; padding: 0; margin: 0; font-family: var(--sans); font-size: var(--t-xs); }
+  .rampa--mapa { height: auto; }
+  .rampa--mapa i { height: 12px; }
+  .mapa__legenda .rampa__eixo { gap: .5rem; font-size: .58rem; }
+  .mapa__legenda ul { list-style: none; padding: 0; margin: var(--s-2) 0 0; font-family: var(--sans); font-size: var(--t-xs); }
   .mapa__legenda li { display: flex; align-items: center; gap: .5rem; padding: .18rem 0; color: var(--ink-2); }
-  .mapa__legenda i { width: 16px; height: 10px; border: 1px solid var(--neat); flex: none; }
-  .mapa__legenda i.linha { height: 2px; border: 0; }
+  .mapa__legenda li i { width: 16px; height: 10px; flex: none; }
+  .mapa__legenda i.linha { height: 2px; }
+  .mapa__legenda i.veu { background: var(--ground); opacity: .5; border: 1px solid var(--rule); }
   .mapa__legenda i.ponto {
     width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--survey); background: var(--sheet);
   }
@@ -84,7 +98,6 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
     border-top: 1px solid var(--neat); background: var(--sheet);
     padding: .45rem var(--s-3); font-family: var(--mono); font-size: .62rem; color: var(--ink-3);
   }
-  .mapa__coord { letter-spacing: .04em; }
 
   /* --- rótulos: a hierarquia tipográfica do atlas, como marcadores HTML --- */
   :global(.rot) {
@@ -105,8 +118,8 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
     color: var(--agua); font-size: .8rem;
   }
   :global(.rot--regiao) {
-    font-family: var(--sans); letter-spacing: .34em; text-transform: uppercase;
-    color: var(--ink-2); font-size: .72rem;
+    font-family: var(--sans); font-weight: 600; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--ink-2); font-size: .68rem;
   }
   :global(.maplibregl-ctrl-attrib) { font-family: var(--sans); font-size: 10px; }
 </style>
@@ -118,64 +131,85 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
   const campo = document.getElementById('campo');
   if (campo) iniciar(campo);
 
-  function iniciar(campo: HTMLElement) {
+  async function iniciar(campo: HTMLElement) {
     const css = () => getComputedStyle(document.documentElement);
     const tok = (n: string) => css().getPropertyValue(n).trim();
+
+    // cantos geográficos exatos da malha de telhas que gerou o relevo
+    const rel = await fetch('/dados/relevo.json').then((r) => r.json()).catch(() => null);
+
+    const fontes: Record<string, maplibregl.SourceSpecification> = {
+      vizinhos:    { type: 'geojson', data: '/dados/vizinhos.geojson' },
+      brasil:      { type: 'geojson', data: '/dados/brasil.geojson' },
+      ufs:         { type: 'geojson', data: '/dados/ufs.geojson' },
+      hidrografia: { type: 'geojson', data: '/dados/hidrografia.geojson' },
+      graticulado: { type: 'geojson', data: '/dados/graticulado.geojson' },
+    };
+    if (rel) {
+      fontes.relevo = {
+        type: 'image',
+        url: '/dados/relevo.png',
+        // a imagem é nativa em Mercator, então os cantos da malha alinham
+        coordinates: [
+          [rel.oeste, rel.norte], [rel.leste, rel.norte],
+          [rel.leste, rel.sul],   [rel.oeste, rel.sul],
+        ],
+      };
+    }
+
+    const camadas: maplibregl.LayerSpecification[] = [
+      { id: 'oceano', type: 'background', paint: { 'background-color': tok('--h-pelagico') } },
+    ];
+    if (rel) camadas.push({ id: 'relevo', type: 'raster', source: 'relevo', paint: { 'raster-opacity': 1, 'raster-fade-duration': 0 } });
+    camadas.push(
+      // véu sobre os vizinhos: convenção de atlas para destacar o país em foco
+      { id: 'veu-vizinhos', type: 'fill', source: 'vizinhos',
+        paint: { 'fill-color': tok('--ground'), 'fill-opacity': 0.5 } },
+      { id: 'graticulado', type: 'line', source: 'graticulado',
+        paint: { 'line-color': tok('--ink'), 'line-width': 0.5, 'line-opacity': 0.18 } },
+      { id: 'ufs-linha', type: 'line', source: 'ufs',
+        paint: {
+          'line-color': tok('--neat'),
+          'line-opacity': 0.5,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.4, 7, 1.1],
+          'line-dasharray': [3, 2],
+        } },
+      { id: 'hidrografia-linha', type: 'line', source: 'hidrografia',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color': tok('--agua'),
+          'line-opacity': 0.9,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 2, 0.5, 6, 2.4],
+        } },
+      { id: 'brasil-linha', type: 'line', source: 'brasil',
+        paint: { 'line-color': tok('--neat'), 'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1.2, 7, 2.4] } },
+    );
 
     const mapa = new maplibregl.Map({
       container: campo,
       center: [-52.5, -14.5],
-      zoom: 3.1,
+      zoom: 3.3,
       minZoom: 2,
       maxZoom: 9,
-      attributionControl: { customAttribution: 'Natural Earth · domínio público' },
-      style: {
-        version: 8,
-        // sem glyphs e sem sprite: não há texto nem ícone renderizado pelo motor
-        sources: {
-          vizinhos:    { type: 'geojson', data: '/dados/vizinhos.geojson' },
-          brasil:      { type: 'geojson', data: '/dados/brasil.geojson' },
-          hidrografia: { type: 'geojson', data: '/dados/hidrografia.geojson' },
-          graticulado: { type: 'geojson', data: '/dados/graticulado.geojson' },
-        },
-        layers: [
-          { id: 'oceano', type: 'background', paint: { 'background-color': tok('--h-plataforma') } },
-          { id: 'graticulado', type: 'line', source: 'graticulado',
-            paint: { 'line-color': tok('--ink-3'), 'line-width': 0.5, 'line-opacity': 0.35 } },
-          { id: 'vizinhos-area', type: 'fill', source: 'vizinhos',
-            paint: { 'fill-color': tok('--sunk'), 'fill-opacity': 0.9 } },
-          { id: 'vizinhos-linha', type: 'line', source: 'vizinhos',
-            paint: { 'line-color': tok('--rule'), 'line-width': 0.6 } },
-          { id: 'brasil-area', type: 'fill', source: 'brasil',
-            paint: { 'fill-color': tok('--tinta-1'), 'fill-opacity': 0.92 } },
-          { id: 'hidrografia-linha', type: 'line', source: 'hidrografia',
-            layout: { 'line-cap': 'round', 'line-join': 'round' },
-            paint: {
-              'line-color': tok('--agua'),
-              'line-opacity': 0.85,
-              'line-width': ['interpolate', ['linear'], ['zoom'], 2, 0.4, 6, 2.2],
-            } },
-          { id: 'brasil-linha', type: 'line', source: 'brasil',
-            paint: { 'line-color': tok('--neat'), 'line-width': 1.3 } },
-        ],
+      attributionControl: {
+        customAttribution: 'Natural Earth · domínio público &middot; Terrarium / Mapzen DEM',
       },
+      style: { version: 8, sources: fontes, layers: camadas },
     });
 
-    // gancho de inspeção durante a construção; sai antes da publicação
     if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__mapa = mapa;
 
     mapa.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
-    mapa.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
     campo.querySelector<HTMLElement>('.maplibregl-canvas')?.setAttribute('tabindex', '0');
+    mapa.on('error', (e) => console.error('[mapa]', e.error?.message ?? e));
 
     /* --- repintura ao trocar de tema: o mapa segue os tokens --------------- */
     function repintar() {
       const def: Array<[string, string, string]> = [
-        ['oceano', 'background-color', '--h-plataforma'],
-        ['graticulado', 'line-color', '--ink-3'],
-        ['vizinhos-area', 'fill-color', '--sunk'],
-        ['vizinhos-linha', 'line-color', '--rule'],
-        ['brasil-area', 'fill-color', '--tinta-1'],
+        ['oceano', 'background-color', '--h-pelagico'],
+        ['veu-vizinhos', 'fill-color', '--ground'],
+        ['graticulado', 'line-color', '--ink'],
+        ['ufs-linha', 'line-color', '--neat'],
         ['hidrografia-linha', 'line-color', '--agua'],
         ['brasil-linha', 'line-color', '--neat'],
       ];
@@ -187,41 +221,57 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
     matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repintar);
 
     /* --- rótulos com supressão de colisão ---------------------------------
-       Atlas impresso não deixa rótulo sobrepor rótulo. Aqui: ordem por
-       importância, e quem colide com um já aceito fica oculto. */
-    type Rotulo = { el: HTMLElement; lngLat: [number, number]; peso: number };
+       Atlas impresso não deixa rótulo sobrepor rótulo. Ordem por importância;
+       quem colide com um já aceito fica oculto. */
+    type Rotulo = {
+      el: HTMLElement; peso: number;
+      zoomMin?: number;
+      curto?: string; longo?: string;   // sigla da UF em escala pequena, nome por extenso em escala grande
+    };
     const rotulos: Rotulo[] = [];
 
-    function criarRotulo(nome: string, lngLat: [number, number], classe: string, peso: number, corpo: number) {
+    function criarRotulo(
+      texto: string, lngLat: [number, number], classe: string, peso: number, corpo: number,
+      extra: Partial<Rotulo> = {},
+    ) {
       // Dois elementos de propósito: o MapLibre escreve `style.opacity` inline no
       // elemento do marcador (oclusão em projeção de globo), e estilo inline vence
       // classe. O invólucro é dele; o rótulo estilizado é nosso.
       const inv = document.createElement('div');
       const el = document.createElement('span');
       el.className = `rot ${classe}`;
-      el.textContent = nome;
+      el.textContent = texto;
       el.style.fontSize = `${corpo}px`;
       inv.appendChild(el);
       new maplibregl.Marker({ element: inv, anchor: 'left', offset: [6, 0] }).setLngLat(lngLat).addTo(mapa);
-      rotulos.push({ el, lngLat, peso });
+      rotulos.push({ el, peso, ...extra });
     }
 
+    let mostrarRotulos = true;
     let agendado = 0;
+
     function resolverColisoes() {
       agendado = 0;
       if (!mostrarRotulos) return;
+      const z = mapa.getZoom();
       const campoBox = campo.getBoundingClientRect();
       const aceitos: DOMRect[] = [];
-      const ordenados = [...rotulos].sort((a, b) => b.peso - a.peso);
-      for (const r of ordenados) {
+
+      for (const r of [...rotulos].sort((a, b) => b.peso - a.peso)) {
+        // sigla em escala pequena, nome por extenso quando há espaço
+        if (r.curto && r.longo) {
+          const desejado = z >= 5 ? r.longo : r.curto;
+          if (r.el.textContent !== desejado) r.el.textContent = desejado;
+        }
+        if (r.zoomMin !== undefined && z < r.zoomMin) { r.el.classList.add('rot--oculto'); continue; }
+
         r.el.classList.remove('rot--oculto');
         const cx = r.el.getBoundingClientRect();
-        // marcador ainda não posicionado pelo motor: não decide nada neste quadro
-        if (cx.width === 0) continue;
-        // fora do campo da prancha: não disputa espaço com quem está dentro
+        if (cx.width === 0) continue;                      // ainda não posicionado
         const fora = cx.right < campoBox.left || cx.left > campoBox.right
                   || cx.bottom < campoBox.top || cx.top > campoBox.bottom;
         if (fora) { r.el.classList.add('rot--oculto'); continue; }
+
         const colide = aceitos.some((a) =>
           !(cx.right < a.left - 3 || cx.left > a.right + 3 || cx.bottom < a.top - 2 || cx.top > a.bottom + 2));
         if (colide) r.el.classList.add('rot--oculto');
@@ -230,31 +280,69 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
     }
     const agendarColisoes = () => { if (!agendado) agendado = requestAnimationFrame(resolverColisoes); };
 
-    let mostrarRotulos = true;
+    /** ponto representativo de um polígono: centroide do maior anel */
+    function centroide(geom: GeoJSON.Geometry): [number, number] | null {
+      const aneis: number[][][] =
+        geom.type === 'Polygon' ? [geom.coordinates[0]]
+        : geom.type === 'MultiPolygon' ? geom.coordinates.map((p) => p[0])
+        : [];
+      if (!aneis.length) return null;
+      const maior = aneis.reduce((a, b) => (b.length > a.length ? b : a));
+      let x = 0, y = 0;
+      for (const [lon, lat] of maior) { x += lon; y += lat; }
+      return [x / maior.length, y / maior.length];
+    }
 
-    /* --- carga dos rótulos: cidades do acervo + hidrografia nomeada -------- */
+    /* --- carga dos rótulos ------------------------------------------------- */
     (async () => {
       try {
-        const [cidades, hidro] = await Promise.all([
+        const [cidades, hidro, ufs] = await Promise.all([
           fetch('/dados/cidades.geojson').then((r) => r.json()),
           fetch('/dados/hidrografia.geojson').then((r) => r.json()),
+          fetch('/dados/ufs.geojson').then((r) => r.json()),
         ]);
 
-        // cidade: redonda, corpo pela população — a hierarquia clássica
-        for (const f of cidades.features.slice(0, 30)) {
-          const pop: number = f.properties.pop ?? 0;
+        // estado: versal espaçada, a convenção para divisão territorial
+        for (const f of ufs.features) {
+          const c = centroide(f.geometry);
+          if (!c) continue;
+          const sigla: string = f.properties.sigla || '';
+          const nome: string = f.properties.nome || '';
+          if (!sigla && !nome) continue;
+          criarRotulo(sigla || nome, c, 'rot--regiao', 2e7, 11,
+            { curto: sigla || nome, longo: nome || sigla });
+        }
+
+        // cidade: redonda, corpo pela população.
+        // O acervo traz homônimos (dois "Natal", dois "Vila Velha"); numa prancha
+        // de país o menor vira ruído, então fica só o de maior população.
+        const porNome = new Map<string, GeoJSON.Feature>();
+        for (const f of cidades.features) {
+          const nome: string = f.properties?.nome ?? '';
+          const anterior = porNome.get(nome);
+          if (!anterior || (f.properties?.pop ?? 0) > (anterior.properties?.pop ?? 0)) {
+            porNome.set(nome, f);
+          }
+        }
+        const unicas = [...porNome.values()]
+          .sort((a, b) => (b.properties?.pop ?? 0) - (a.properties?.pop ?? 0))
+          .slice(0, 30);
+
+        for (const f of unicas) {
+          const pop: number = f.properties?.pop ?? 0;
+          const nome: string = f.properties?.nome ?? '';
           const corpo = pop > 8e6 ? 15 : pop > 3e6 ? 13 : pop > 1e6 ? 12 : 10.5;
-          const capital = f.properties.nome === 'Brasilia' || f.properties.capital === 1;
+          const capital = nome === 'Brasilia' || f.properties?.capital === 1;
           criarRotulo(
-            f.properties.nome === 'Brasilia' ? 'Brasília' : f.properties.nome,
-            f.geometry.coordinates as [number, number],
+            nome === 'Brasilia' ? 'Brasília' : nome,
+            (f.geometry as GeoJSON.Point).coordinates as [number, number],
             capital ? 'rot--capital' : 'rot--cidade',
-            capital ? 1e9 : pop,
+            capital ? 1e9 : pop + 1e8,        // cidade vence estado; capital vence tudo
             corpo,
           );
         }
 
-        // água: itálico serifado espaçado, no ponto médio do traçado
+        // água: itálico serifado espaçado; cede espaço a cidade e estado
         const vistos = new Set<string>();
         for (const f of hidro.features) {
           const nome: string = f.properties.nome;
@@ -276,8 +364,7 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
     mapa.on('move', agendarColisoes);
     mapa.on('zoom', agendarColisoes);
     mapa.on('load', agendarColisoes);
-    mapa.on('idle', agendarColisoes);   // motor terminou de posicionar: medida confiável
-    mapa.on('error', (e) => console.error('[mapa]', e.error?.message ?? e));
+    mapa.on('idle', agendarColisoes);
 
     /* --- leitura de coordenada sob o cursor -------------------------------- */
     const coord = document.getElementById('coord');
@@ -295,8 +382,8 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
     const escalaTxt = document.getElementById('escala-txt');
     const atualizarEscala = () => {
       if (!escalaTxt) return;
-      const m = 156543.03392 * Math.cos((mapa.getCenter().lat * Math.PI) / 180) / 2 ** mapa.getZoom();
-      const km = Math.round((m * 104) / 1000);  // 104 px = largura das 4 barras
+      const m = (156543.03392 * Math.cos((mapa.getCenter().lat * Math.PI) / 180)) / 2 ** mapa.getZoom();
+      const km = Math.round((m * 104) / 1000);
       escalaTxt.textContent = `0 ——— ${km.toLocaleString('pt-BR')} km`;
     };
     mapa.on('zoom', atualizarEscala);
@@ -304,7 +391,8 @@ const { altura = 'clamp(360px, 58vh, 620px)' } = Astro.props;
 
     /* --- controles de camada ----------------------------------------------- */
     const alvos: Record<string, string[]> = {
-      vizinhos: ['vizinhos-area', 'vizinhos-linha'],
+      relevo: ['relevo'],
+      ufs: ['ufs-linha'],
       hidrografia: ['hidrografia-linha'],
       graticulado: ['graticulado'],
     };

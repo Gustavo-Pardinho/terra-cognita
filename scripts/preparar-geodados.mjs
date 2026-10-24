@@ -100,6 +100,21 @@ async function principal() {
     .slice(0, 60);
   await gravar('cidades.geojson', fc(cidades));
 
+  const estados = await baixar('ne_10m_admin_1_states_provinces');
+  const ufs = estados.features
+    .filter((f) => f.properties.admin === 'Brazil' || f.properties.iso_a2 === 'BR')
+    .map((f) => ({
+      type: 'Feature',
+      properties: {
+        nome: f.properties.name,
+        sigla: (f.properties.postal ?? f.properties.iso_3166_2 ?? '').replace('BR-', ''),
+        regiao: f.properties.region ?? '',
+      },
+      geometry: enxugar(f.geometry),
+    }));
+  await gravar('ufs.geojson', fc(ufs));
+  console.log(`     ${ufs.length} unidades federativas`);
+
   const rios = await baixar('ne_50m_rivers_lake_centerlines');
   const naAmSul = (g) => {
     const cs = g.type === 'LineString' ? g.coordinates : g.coordinates.flat();

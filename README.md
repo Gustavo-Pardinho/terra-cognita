@@ -10,7 +10,8 @@ que o molde aguenta conteúdo real, antes de escalar.
 
 ```sh
 npm install
-npm run dados     # baixa do Natural Earth e recorta para public/dados/ (uma vez)
+npm run dados     # recorta o Natural Earth para public/dados/ (uma vez)
+npm run relevo    # assa a prancha de relevo a partir de um DEM real (uma vez)
 npm run dev       # http://localhost:4321
 ```
 
@@ -36,7 +37,13 @@ mostra a pendência ao leitor em vez de escondê-la.
 
 ## Mapa sem servidor
 
-Os dados geográficos são GeoJSON estático em `public/dados/`, servidos como arquivo.
+O relevo é um PNG indexado assado de um DEM real (Terrarium/Mapzen, z6 ≈ 2,4 km/px):
+altitude decodificada, faixas hipsométricas e sombreamento com luz do noroeste.
+A imagem é nativa em Mercator, então os cantos da malha de telhas ancoram sem distorção.
+São 162 cores — a rampa vezes os degraus de sombra —, o que cabe numa paleta indexada e
+torna o PNG-8 **sem perda**, três vezes menor que o RGB (0,69 MB contra 1,90 MB).
+
+Os demais dados geográficos são GeoJSON estático em `public/dados/`, servidos como arquivo.
 Não há servidor de ladrilho e não há servidor de glifo: os rótulos são marcadores HTML,
 o que permite usar a hierarquia tipográfica real do atlas — versal espaçada para região,
 redonda para cidade, itálico serifado azul para água, monoespaçada para coordenada.
@@ -57,6 +64,14 @@ src/data/paises/           itens do acervo
 src/islands/               ilhas interativas (MapLibre)
 scripts/preparar-geodados  recorte do Natural Earth
 ```
+
+## Limites conhecidos da Fase 0
+
+- O relevo é um raster único de z6. Ao aproximar além de z7 ele borra; a resposta real
+  são ladrilhos, e é isso que a Fase 1 resolve.
+- `ufs.geojson` tem 582 kB sem compressão. GeoJSON comprime muito bem; o host de
+  produção serve com gzip/brotli, mas em `astro dev` o peso aparece cru.
+- O MapLibre pesa 286 kB comprimidos, carregados só nas pranchas que têm mapa.
 
 ## Notas de verificação
 

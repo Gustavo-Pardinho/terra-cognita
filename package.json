@@ -9,15 +9,17 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "dados": "node scripts/preparar-geodados.mjs"
+    "dados": "node scripts/preparar-geodados.mjs",
+    "relevo": "node scripts/preparar-relevo.mjs"
   },
   "dependencies": {
-    "astro": "^5.14.1",
     "@astrojs/mdx": "^4.3.6",
+    "astro": "^5.14.1",
     "maplibre-gl": "^5.9.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "pngjs": "^7.0.0",
     "typescript": "^5.9.3"
   }
 }
