@@ -13,6 +13,18 @@ const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SAIDA = resolve(RAIZ, 'public/dados');
 const BASE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson';
 
+/* As macrorregiões não vêm no Natural Earth (o campo `region` é nulo para o
+   Brasil). São divisão oficial do IBGE desde 1970, dado de referência estável —
+   fonte: IBGE, Divisão Regional do Brasil. */
+const REGIAO_POR_UF = {
+  AC: 'Norte', AP: 'Norte', AM: 'Norte', PA: 'Norte', RO: 'Norte', RR: 'Norte', TO: 'Norte',
+  AL: 'Nordeste', BA: 'Nordeste', CE: 'Nordeste', MA: 'Nordeste', PB: 'Nordeste',
+  PE: 'Nordeste', PI: 'Nordeste', RN: 'Nordeste', SE: 'Nordeste',
+  DF: 'Centro-Oeste', GO: 'Centro-Oeste', MT: 'Centro-Oeste', MS: 'Centro-Oeste',
+  ES: 'Sudeste', MG: 'Sudeste', RJ: 'Sudeste', SP: 'Sudeste',
+  PR: 'Sul', RS: 'Sul', SC: 'Sul',
+};
+
 const VIZINHOS = new Set([
   'Uruguay', 'Argentina', 'Paraguay', 'Bolivia', 'Peru', 'Colombia',
   'Venezuela', 'Guyana', 'Suriname', 'France', 'Chile', 'Ecuador',
@@ -108,7 +120,7 @@ async function principal() {
       properties: {
         nome: f.properties.name,
         sigla: (f.properties.postal ?? f.properties.iso_3166_2 ?? '').replace('BR-', ''),
-        regiao: f.properties.region ?? '',
+        regiao: REGIAO_POR_UF[(f.properties.postal ?? '').replace('BR-', '')] ?? '',
       },
       geometry: enxugar(f.geometry),
     }));

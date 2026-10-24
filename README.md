@@ -3,8 +3,9 @@
 Atlas de estudo do mundo. Geografia, história, geopolítica, economia, ideias e
 vestígios tratados como camadas de um mesmo mapa — com fonte em toda afirmação.
 
-**Estado: Fase 0** — o molde. Uma prancha de país feita de ponta a ponta para provar
-que o molde aguenta conteúdo real, antes de escalar.
+**Estado: Fase 1** — o mapa-mãe. O molde da Fase 0 provou que aguenta conteúdo real;
+agora o mapa tem pirâmide de ladrilhos, pilha de camadas, inspetor de clique,
+permalink de estado e indicatriz de Tissot.
 
 ## Rodar
 
@@ -37,11 +38,21 @@ mostra a pendência ao leitor em vez de escondê-la.
 
 ## Mapa sem servidor
 
-O relevo é um PNG indexado assado de um DEM real (Terrarium/Mapzen, z6 ≈ 2,4 km/px):
-altitude decodificada, faixas hipsométricas e sombreamento com luz do noroeste.
-A imagem é nativa em Mercator, então os cantos da malha de telhas ancoram sem distorção.
-São 162 cores — a rampa vezes os degraus de sombra —, o que cabe numa paleta indexada e
-torna o PNG-8 **sem perda**, três vezes menor que o RGB (0,69 MB contra 1,90 MB).
+O relevo é uma pirâmide de 345 ladrilhos PNG (z3–z7, 4,2 MB) assada de um DEM real
+(Terrarium/Mapzen): altitude decodificada, faixas hipsométricas dos tokens e
+sombreamento com luz do noroeste.
+
+Cada nível é montado como **um mosaico com borda de um ladrilho**, sombreado inteiro e só
+então fatiado. É o que elimina a costura: o gradiente na borda de um ladrilho enxerga o
+vizinho. Fatiar primeiro e sombrear depois produz uma grade visível de emendas.
+
+Os ladrilhos são PNG indexado: a prancha usa ~160 cores — a rampa vezes os degraus de
+sombra —, o que cabe numa paleta de 256 e torna o PNG-8 **sem perda**, três vezes menor
+que o RGB. O escritor está em `scripts/preparar-relevo.mjs` (zlib + CRC32, sem
+dependência nova); `pngjs` entra só para ler as telhas de origem.
+
+O zoom máximo do mapa é 8 porque o DEM assado vai até z7. Um atlas não blefa além da
+resolução do seu dado.
 
 Os demais dados geográficos são GeoJSON estático em `public/dados/`, servidos como arquivo.
 Não há servidor de ladrilho e não há servidor de glifo: os rótulos são marcadores HTML,
@@ -65,13 +76,35 @@ src/islands/               ilhas interativas (MapLibre)
 scripts/preparar-geodados  recorte do Natural Earth
 ```
 
-## Limites conhecidos da Fase 0
+## Permalink de estado
 
-- O relevo é um raster único de z6. Ao aproximar além de z7 ele borra; a resposta real
-  são ladrilhos, e é isso que a Fase 1 resolve.
+O endereço guarda centro, zoom, projeção e camadas ligadas:
+
+```
+#z=5.4&lat=-23.55&lon=-46.63&proj=mercator&cam=relevo,rotulos,tissot
+```
+
+Formato legível de propósito, para poder ser editado à mão e explicado numa aula.
+A gravação usa `replaceState` — arrastar o mapa não deve encher o histórico. A Fase 2
+acrescenta `ano` aqui sem quebrar os links já existentes.
+
+## Indicatriz de Tissot
+
+Círculos de raio verdadeiro constante (500 km) sobre a superfície da esfera, calculados
+por fórmula de destino geodésico em `src/lib/estado-mapa.ts`. Em Mercator eles incham com
+a latitude; na ortográfica mudam de forma mas não de área. É a aula de distorção mais
+direta que um atlas pode dar.
+
+## Limites conhecidos
+
 - `ufs.geojson` tem 582 kB sem compressão. GeoJSON comprime muito bem; o host de
   produção serve com gzip/brotli, mas em `astro dev` o peso aparece cru.
 - O MapLibre pesa 286 kB comprimidos, carregados só nas pranchas que têm mapa.
+- Os 345 ladrilhos de relevo estão versionados para o repositório ser executável logo
+  após o clone. Regerar a pirâmide reescreve todos eles — rode `npm run relevo` só quando
+  a rampa ou a extensão mudarem de fato.
+- O inspetor sabe o que o acervo sabe. Para unidades federativas ainda não há item no
+  acervo, então ele declara a lacuna em vez de inventar dado.
 
 ## Notas de verificação
 

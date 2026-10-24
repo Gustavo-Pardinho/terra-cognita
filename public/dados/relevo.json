@@ -1,9 +1,14 @@
 {
-  "oeste": -78.75,
-  "leste": -33.75,
-  "norte": 11.178401873711792,
-  "sul": -36.5978891330702,
-  "zoom": 6,
-  "largura": 2048,
-  "altura": 2304
+  "esquema": "/dados/relevo/{z}/{x}/{y}.png",
+  "minzoom": 3,
+  "maxzoom": 7,
+  "tamanhoLadrilho": 256,
+  "limites": [
+    -74,
+    -34,
+    -34,
+    6
+  ],
+  "ladrilhos": 345,
+  "atribuicao": "Terrarium / Mapzen DEM"
 }
