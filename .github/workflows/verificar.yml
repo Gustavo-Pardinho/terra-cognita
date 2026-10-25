@@ -1,0 +1,30 @@
+name: Verificar
+
+# O build é a primeira linha de defesa da procedência: citar uma fonte que não
+# esteja cadastrada em src/lib/fontes.ts faz `astro check` e `astro build`
+# falharem. Rodar isso a cada push é o que mantém a regra viva.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Checagem de tipos e de fontes citadas
+        run: npx astro check
+      - name: Build
+        run: npx astro build
+      - name: Conferir que os ladrilhos de relevo estão no repositório
+        run: |
+          n=$(find public/dados/relevo -name '*.png' | wc -l)
+          echo "ladrilhos encontrados: $n"
+          test "$n" -ge 300 || { echo "faltam ladrilhos — rode npm run relevo"; exit 1; }

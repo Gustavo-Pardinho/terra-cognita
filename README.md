@@ -136,3 +136,13 @@ direta que um atlas pode dar.
 O mapa carrega o estilo dentro de `requestAnimationFrame`. Em aba de segundo plano ou
 em Chrome headless sem vsync o rAF fica suspenso, e o mapa aparece vazio — é artefato do
 ambiente, não defeito. Verificação visual precisa de janela em primeiro plano.
+
+## Licença
+
+- **Código** (`src/`, `scripts/`, configuração): [MIT](LICENSE)
+- **Conteúdo e dados** (verbetes, `src/data/`, `public/dados/`): [CC BY-SA 4.0](LICENSE-CONTEUDO.md)
+- **Acervos de terceiros**: cada um com a sua licença, em [ATRIBUICAO.md](ATRIBUICAO.md)
+
+O CompartilhaIgual não é escolha estética: o MapBiomas é CC BY-SA e a cláusula se
+propaga. E dois acervos em jogo têm cláusula não comercial, então o produto de dados não
+pode ser explorado comercialmente enquanto eles estiverem aqui — ver ATRIBUICAO.md.

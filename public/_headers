@@ -1,0 +1,18 @@
+# Cloudflare Pages — regras de cache
+# Os ladrilhos de relevo são assados em build e nunca mudam sem mudar de nome.
+# Servi-los com cache longo é o que torna o atlas barato de manter.
+
+/dados/relevo/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/dados/*.geojson
+  Cache-Control: public, max-age=86400
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# O HTML precisa revalidar: é por ele que uma correção de verbete chega ao leitor.
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

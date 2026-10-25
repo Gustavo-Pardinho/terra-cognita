@@ -1,0 +1,5 @@
+# Terra Cognita — atlas de estudo do mundo
+User-agent: *
+Allow: /
+
+Sitemap: https://terracognita.org/sitemap-index.xml
