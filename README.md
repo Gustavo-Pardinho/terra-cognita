@@ -137,6 +137,26 @@ O mapa carrega o estilo dentro de `requestAnimationFrame`. Em aba de segundo pla
 em Chrome headless sem vsync o rAF fica suspenso, e o mapa aparece vazio — é artefato do
 ambiente, não defeito. Verificação visual precisa de janela em primeiro plano.
 
+## Publicação
+
+Hospedado no Cloudflare Pages a partir deste repositório.
+
+| Campo | Valor |
+|---|---|
+| Framework preset | Astro |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Root directory | `/` |
+| Variável `NODE_VERSION` | `22` |
+| Variável `SITE_URL` | só quando houver domínio próprio |
+
+`SITE_URL` governa o endereço canônico do sitemap e do robots.txt. Sem ela o build usa
+o endereço do Pages. Declarar um domínio que ainda não resolve serve aos buscadores um
+sitemap quebrado, o que é pior que não ter sitemap — por isso não fica fixo no código.
+
+`public/_headers` é copiado para `dist/` e o Pages o aplica: cache imutável de um ano
+nos ladrilhos e no bundle, revalidação obrigatória no HTML.
+
 ## Licença
 
 - **Código** (`src/`, `scripts/`, configuração): [MIT](LICENSE)
