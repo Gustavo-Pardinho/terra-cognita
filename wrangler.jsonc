@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+
+  // Terra Cognita é um site estático: não há código de Worker, só os arquivos
+  // que `astro build` produz. Workers com assets estáticos serve isso sem
+  // `main`, e é o caminho que a Cloudflare adota para projetos novos.
+  "name": "terra-cognita",
+  "compatibility_date": "2026-10-25",
+
+  "assets": {
+    "directory": "./dist",
+
+    // Serve dist/404.html quando o caminho não existe, em vez do erro genérico
+    // da plataforma. A prancha de 404 lista o que já existe no atlas.
+    "not_found_handling": "404-page",
+
+    // Sem isto, /atlas/ e /atlas respondem coisas diferentes.
+    "html_handling": "auto-trailing-slash"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

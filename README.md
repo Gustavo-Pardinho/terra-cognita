@@ -139,23 +139,27 @@ ambiente, não defeito. Verificação visual precisa de janela em primeiro plano
 
 ## Publicação
 
-Hospedado no Cloudflare Pages a partir deste repositório.
+Cloudflare Workers com assets estáticos, a partir deste repositório. Não há código de
+Worker: `wrangler.jsonc` apenas aponta para o `dist/` que o `astro build` produz.
 
-| Campo | Valor |
+| Campo do formulário | Valor |
 |---|---|
-| Framework preset | Astro |
 | Build command | `npm run build` |
-| Build output directory | `dist` |
+| Deploy command | `npx wrangler deploy` |
 | Root directory | `/` |
-| Variável `NODE_VERSION` | `22` |
-| Variável `SITE_URL` | só quando houver domínio próprio |
+| Protect with Cloudflare Access | **desligado** — ligado exige login para ver o site |
 
-`SITE_URL` governa o endereço canônico do sitemap e do robots.txt. Sem ela o build usa
-o endereço do Pages. Declarar um domínio que ainda não resolve serve aos buscadores um
-sitemap quebrado, o que é pior que não ter sitemap — por isso não fica fixo no código.
+A versão do Node vem de `.node-version` e de `engines` no `package.json`, não de variável
+de ambiente, para o build falhar cedo e com clareza em vez de quebrar no meio.
 
-`public/_headers` é copiado para `dist/` e o Pages o aplica: cache imutável de um ano
-nos ladrilhos e no bundle, revalidação obrigatória no HTML.
+`SITE_URL` governa o endereço canônico do sitemap e do robots.txt. Só definir quando
+houver domínio próprio; sem ela o build usa o endereço da própria plataforma. Declarar um
+domínio que ainda não resolve serve aos buscadores um sitemap quebrado, o que é pior que
+não ter sitemap — por isso não fica fixo no código.
+
+`public/_headers` é copiado para `dist/` e aplicado pela plataforma: cache imutável de um
+ano nos ladrilhos e no bundle, revalidação obrigatória no HTML. `not_found_handling`
+serve a prancha de 404 do próprio atlas em vez do erro genérico.
 
 ## Licença
 
