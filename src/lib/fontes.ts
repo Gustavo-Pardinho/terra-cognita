@@ -142,6 +142,23 @@ export const FONTES = {
     licenca: 'uso livre com citação da fonte',
     acessoEm: '2026-10-25',
   },
+  'tratado-tordesilhas': {
+    id: 'tratado-tordesilhas',
+    titulo: 'Tratado de Tordesilhas, 7 de junho de 1494',
+    autor: 'Arquivo Nacional da Torre do Tombo (original), Portugal',
+    url: 'https://digitarq.arquivos.pt/',
+    licenca: 'documento histórico, domínio público',
+    acessoEm: '2026-10-25',
+    nota: 'O limite de 370 léguas a oeste de Cabo Verde não fixa um meridiano único: depende da légua e da ilha de referência, ambas disputadas à época.',
+  },
+  'tratado-madri': {
+    id: 'tratado-madri',
+    titulo: 'Tratado de Madri, 13 de janeiro de 1750',
+    autor: 'Portugal e Espanha',
+    licenca: 'documento histórico, domínio público',
+    acessoEm: '2026-10-25',
+    nota: 'Substitui Tordesilhas pelo princípio do uti possidetis: vale quem ocupa.',
+  },
   'david-rumsey': {
     id: 'david-rumsey',
     titulo: 'David Rumsey Map Collection',

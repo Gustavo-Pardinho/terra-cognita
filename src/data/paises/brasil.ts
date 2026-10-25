@@ -39,7 +39,14 @@ export interface Pais extends Item {
     pibPerCapita: Fato<number>;
     moeda: Fato<string>;
   };
-  capital: { nome: Fato<string>; desde: Fato<number>; ponto: [number, number] };
+}
+
+/** Uma capital e o período em que exerceu a função. */
+export interface Capital {
+  nome: Fato<string>;
+  ponto: [number, number];
+  vigencia: Vigencia;
+  nota?: string;
 }
 
 export const brasil: Pais = {
@@ -100,13 +107,6 @@ export const brasil: Pais = {
     moeda: { valor: 'Real (BRL)', fonte: 'ibge-pib', precisao: 'exata' },
   },
 
-  capital: {
-    nome: { valor: 'Brasília', fonte: 'constituicao-1988', precisao: 'exata' },
-    desde: { valor: 1960, formato: 'ano', fonte: 'constituicao-1988', precisao: 'exata',
-      nota: 'Inaugurada em 21 de abril de 1960; antes, Rio de Janeiro (1763–1960) e Salvador (1549–1763).' },
-    ponto: [-47.8825, -15.7942],
-  },
-
   relacoes: [
     { tipo: 'faz-fronteira-com', alvo: 'uruguai',        fonte: 'itamaraty-limites' },
     { tipo: 'faz-fronteira-com', alvo: 'argentina',      fonte: 'itamaraty-limites' },
@@ -131,6 +131,35 @@ export const brasil: Pais = {
  * exatamente o buraco que deixou 18 afirmações de 1500 a 1964 citando a
  * Constituição de 1988 como fonte.
  */
+/**
+ * Sequência de capitais. É o dado que o controle de ano comanda no mapa: mover
+ * o ano move o marcador, porque cada capital carrega a própria vigência.
+ * A capital atual é derivada daqui — não há um campo `capital` duplicado no item.
+ */
+export const capitais: Capital[] = [
+  {
+    nome: { valor: 'Salvador', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    ponto: [-38.5108, -12.9777],
+    vigencia: { de: 1549, ate: 1763, precisao: 'exata' },
+    nota: 'Sede do governo-geral, primeiro aparato administrativo centralizado da colônia.',
+  },
+  {
+    nome: { valor: 'Rio de Janeiro', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    ponto: [-43.1729, -22.9068],
+    vigencia: { de: 1763, ate: 1960, precisao: 'exata' },
+    nota: 'A transferência acompanha o deslocamento do eixo econômico do açúcar nordestino para o ouro das Minas.',
+  },
+  {
+    nome: { valor: 'Brasília', fonte: 'constituicao-1988', precisao: 'exata' },
+    ponto: [-47.8825, -15.7942],
+    vigencia: { de: 1960, precisao: 'exata' },
+    nota: 'Inaugurada em 21 de abril de 1960. A mudança para o planalto central é decisão geopolítica de interiorização.',
+  },
+];
+
+/** A capital em vigor hoje, derivada da sequência. */
+export const capitalAtual = capitais[capitais.length - 1]!;
+
 export const marcos: Array<{ ano: Fato<number>; titulo: string; nota: string }> = [
   {
     ano: { valor: 1500, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
@@ -193,4 +222,4 @@ export const trafico = {
  * exibem — a prancha e o índice de regiões — e montá-lo duas vezes com entradas
  * diferentes fazia os números divergirem para o mesmo item.
  */
-export const registroBrasil = () => criarRegistro({ brasil, marcos, trafico });
+export const registroBrasil = () => criarRegistro({ brasil, capitais, marcos, trafico });

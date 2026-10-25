@@ -1,0 +1,232 @@
+---
+/* =============================================================================
+   A LENTE TEMPO
+   Os mesmos itens do acervo, lidos pela vigência. O eixo mostra o espaçamento
+   verdadeiro entre os marcos — é nele que se vê que 1888 e 1889 são colados e
+   que entre 1763 e 1822 há meio século de silêncio nesta prancha.
+   ========================================================================== */
+import Base from '../layouts/Base.astro';
+import Prancha from '../components/Prancha.astro';
+import Dado from '../components/Dado.astro';
+import Fontes from '../components/Fontes.astro';
+import { capitais, marcos, registroBrasil } from '../data/paises/brasil';
+import { ANO_MINIMO, ANO_MAXIMO, TORDESILHAS, posicaoNaFaixa } from '../lib/tempo';
+import { formatarVigencia } from '../lib/acervo';
+
+const r = registroBrasil();
+
+/** tudo que tem vigência declarada, para o corte sincrônico */
+const comVigencia = [
+  ...capitais.map((c) => ({
+    rotulo: 'Capital', termo: 'anterior', nome: c.nome.valor, vigencia: c.vigencia, nota: c.nota,
+  })),
+  {
+    rotulo: 'Tratado', termo: 'revogado', nome: 'Tordesilhas',
+    vigencia: { de: TORDESILHAS.assinado, ate: TORDESILHAS.revogado },
+    nota: 'Limite a 370 léguas a oeste de Cabo Verde. O meridiano exato é disputado — por isso o mapa desenha a faixa inteira.',
+  },
+  {
+    rotulo: 'Entidade política', termo: 'extinta', nome: 'República Federativa do Brasil',
+    vigencia: { de: 1889 }, nota: 'Sucede o Império do Brasil.',
+  },
+];
+
+const eixo = marcos.map((m, i) => ({
+  i, ano: m.ano.valor, titulo: m.titulo, nota: m.nota,
+  pos: posicaoNaFaixa(m.ano.valor) * 100,
+}));
+---
+<Base titulo="Tempo" descricao="A lente Tempo do Terra Cognita: a linha do tempo dos marcos e o corte sincrônico do que estava em vigor em cada ano." larga>
+
+  <Prancha n={1} titulo="A linha do tempo" meta={`${marcos.length} marcos · ${ANO_MINIMO}–${ANO_MAXIMO}`}>
+    <p class="abertura">
+      O eixo abaixo é proporcional: a distância entre dois marcos na tela é a distância
+      real entre eles no tempo. Mova o ano e veja o que estava em vigor — e depois leve
+      esse mesmo ano para o mapa.
+    </p>
+
+    <div class="controle">
+      <label for="ano">Ano</label>
+      <input id="ano" type="range" min={ANO_MINIMO} max={ANO_MAXIMO} step="1" value={ANO_MAXIMO} />
+      <output id="ano-valor" class="mono">{ANO_MAXIMO}</output>
+      <a id="ir-atlas" class="controle__ir" href="/atlas">Ver no mapa →</a>
+    </div>
+
+    <div class="eixo">
+      <div class="eixo__trilho">
+        <div class="eixo__cursor" id="cursor" style="top:100%"></div>
+        {eixo.map((e) => (
+          <span class="eixo__tique" style={`top:${e.pos}%`} title={`${e.ano} — ${e.titulo}`}></span>
+        ))}
+        <span class="eixo__extremo eixo__extremo--topo mono">{ANO_MINIMO}</span>
+        <span class="eixo__extremo eixo__extremo--base mono">{ANO_MAXIMO}</span>
+      </div>
+
+      <ol class="marcos">
+        {eixo.map((e) => (
+          <li data-ano={e.ano}>
+            <span class="marcos__ano"><Dado r={r} k={`marcos.${e.i}.ano`} /></span>
+            <div>
+              <b>{e.titulo}</b>
+              <p class="fina">{e.nota}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </Prancha>
+
+  <Prancha n={2} titulo="Corte sincrônico" meta="O que estava em vigor">
+    <div class="grade">
+      <div>
+        <p class="abertura">
+          A pergunta que um atlas precisa responder e uma lista cronológica não
+          responde: <i>o que mais estava valendo neste ano?</i>
+        </p>
+        <div class="rolagem" style="margin-top:var(--s-4)">
+          <table>
+            <thead><tr><th>Tipo</th><th>Item</th><th>Vigência</th><th>Em <span id="ano-tabela">{ANO_MAXIMO}</span></th></tr></thead>
+            <tbody>
+              {comVigencia.map((v) => (
+                <tr data-de={v.vigencia.de ?? ''} data-ate={'ate' in v.vigencia && v.vigencia.ate !== undefined ? v.vigencia.ate : ''} data-termo={v.termo}>
+                  <td class="fina">{v.rotulo}</td>
+                  <td><b>{v.nome}</b><div class="fina">{v.nota}</div></td>
+                  <td class="num">{formatarVigencia(v.vigencia)}</td>
+                  <td><span class="estado"></span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <aside>
+        <div class="nota">
+          <strong>O que ainda não varia no tempo.</strong> As fronteiras, os estados e os
+          nomes de cidade desenhados no mapa são os de hoje. Fronteira histórica exige
+          geometria datada, que o acervo ainda não tem — e desenhar a de hoje fingindo ser
+          a de 1650 seria o erro que este atlas existe para não cometer.
+        </div>
+        <div class="nota" style="margin-top:var(--s-4)">
+          <strong>O que já varia.</strong> A capital em vigor, a vigência de Tordesilhas e
+          a da própria República. São poucos itens, mas o mecanismo é o definitivo: cada
+          um carrega a sua vigência, e nada no código sabe o que é uma capital.
+        </div>
+      </aside>
+    </div>
+
+    <div style="margin-top:var(--s-6)"><Fontes r={r} titulo="Fontes desta prancha" /></div>
+  </Prancha>
+
+</Base>
+
+<style>
+  .controle {
+    display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+    border: 1px solid var(--rule); background: var(--ground);
+    padding: var(--s-3) var(--s-4); margin: var(--s-5) 0;
+  }
+  .controle label {
+    font-family: var(--sans); font-size: var(--t-xs); font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .controle input[type="range"] { flex: 1; min-width: 180px; accent-color: var(--brass); }
+  .controle output { font-size: var(--t-md); min-width: 5ch; text-align: right; }
+  .controle__ir { font-family: var(--sans); font-size: var(--t-sm); white-space: nowrap; }
+
+  .eixo { display: grid; grid-template-columns: 3.2rem 1fr; gap: var(--s-4); }
+  .eixo__trilho {
+    position: relative; border-left: 1px solid var(--rule); margin-left: 1.4rem;
+  }
+  .eixo__tique {
+    position: absolute; left: -5px; width: 10px; height: 1px; background: var(--ink-3);
+  }
+  .eixo__cursor {
+    position: absolute; left: -1.35rem; right: auto; width: 2.2rem; height: 0;
+    border-top: 2px solid var(--survey);
+    transition: top var(--mov-camada) var(--ease-globo);
+  }
+  .eixo__extremo {
+    position: absolute; left: -1.3rem; font-size: .58rem; color: var(--ink-3);
+    writing-mode: vertical-rl; letter-spacing: .05em;
+  }
+  .eixo__extremo--topo { top: 0; }
+  .eixo__extremo--base { bottom: 0; }
+
+  .marcos { list-style: none; padding: 0; margin: 0; }
+  .marcos li {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: var(--s-4);
+    padding: var(--s-3) 0; border-top: 1px solid var(--rule-fine);
+    transition: opacity var(--mov-camada) var(--ease-globo);
+  }
+  .marcos li:first-child { border-top: 1px solid var(--rule); }
+  .marcos li[data-futuro] { opacity: .32; }
+  .marcos__ano { color: var(--brass); font-size: var(--t-sm); padding-top: .15rem; }
+  .marcos b { font-family: var(--sans); font-size: .95rem; }
+  .marcos p { margin-top: .2rem; max-width: min(var(--medida), 100%); }
+  @media (max-width: 560px) {
+    .eixo { grid-template-columns: 1fr; }
+    .eixo__trilho { display: none; }
+    .marcos li { grid-template-columns: 1fr; gap: var(--s-1); }
+  }
+
+  .estado {
+    font-family: var(--mono); font-size: var(--t-xs); letter-spacing: .06em;
+    text-transform: uppercase; border: 1px solid currentColor; padding: .1rem .3rem;
+    color: var(--ink-3); white-space: nowrap;
+  }
+  .estado[data-v="em vigor"] { color: var(--cert-exata); }
+  .estado[data-v="encerrada"] { color: var(--cert-estimada); }
+</style>
+
+<script>
+  import { ANO_MAXIMO, ANO_MINIMO, posicaoNaFaixa } from '../lib/tempo';
+
+  const barra = document.getElementById('ano') as HTMLInputElement | null;
+  const valor = document.getElementById('ano-valor');
+  const cursor = document.getElementById('cursor');
+  const anoTabela = document.getElementById('ano-tabela');
+  const irAtlas = document.getElementById('ir-atlas') as HTMLAnchorElement | null;
+
+  function aplicar(ano: number) {
+    if (valor) valor.textContent = String(ano);
+    if (anoTabela) anoTabela.textContent = String(ano);
+    if (cursor) cursor.style.top = `${posicaoNaFaixa(ano) * 100}%`;
+
+    // marcos ainda no futuro em relação ao ano escolhido ficam apagados
+    document.querySelectorAll<HTMLElement>('.marcos li').forEach((li) => {
+      const a = Number(li.dataset.ano);
+      if (a > ano) li.dataset.futuro = ''; else delete li.dataset.futuro;
+    });
+
+    // corte sincrônico: o estado de vigência de cada item naquele ano
+    document.querySelectorAll<HTMLElement>('tbody tr').forEach((tr) => {
+      const de = tr.dataset.de ? Number(tr.dataset.de) : undefined;
+      const ate = tr.dataset.ate ? Number(tr.dataset.ate) : undefined;
+      const marca = tr.querySelector<HTMLElement>('.estado');
+      if (!marca) return;
+      // o termo depende do tipo: tratado é revogado, capital é anterior, Estado é extinto
+      const encerrado = tr.dataset.termo ?? 'encerrada';
+      const v = de !== undefined && ano < de ? 'ainda não'
+              : ate !== undefined && ano > ate ? encerrado
+              : 'em vigor';
+      marca.textContent = v;
+      marca.dataset.v = v === 'em vigor' ? 'em vigor' : v === 'ainda não' ? 'ainda não' : 'encerrada';
+    });
+
+    // o link para o mapa leva o ano junto, pelo mesmo formato de permalink
+    if (irAtlas) {
+      irAtlas.href = ano < ANO_MAXIMO
+        ? `/atlas#z=3.3&lat=-14.5&lon=-52.5&proj=mercator&cam=relevo,ufs,hidrografia,graticulado,rotulos&ano=${ano}`
+        : '/atlas';
+    }
+  }
+
+  barra?.addEventListener('input', () => aplicar(Number(barra.value)));
+
+  // um ano vindo no endereço abre a prancha já naquele corte
+  const doEndereco = new URLSearchParams(location.hash.replace(/^#/, '')).get('ano');
+  const inicial = doEndereco ? Number(doEndereco) : ANO_MAXIMO;
+  const seguro = Number.isFinite(inicial) ? Math.min(ANO_MAXIMO, Math.max(ANO_MINIMO, inicial)) : ANO_MAXIMO;
+  if (barra) barra.value = String(seguro);
+  aplicar(seguro);
+</script>

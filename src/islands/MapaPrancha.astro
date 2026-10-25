@@ -54,6 +54,13 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     </ul>
   </div>
 
+  <div class="tempo-barra">
+    <label for="ano">Ano</label>
+    <input id="ano" type="range" min="1450" max="2026" step="1" value="2026" />
+    <output id="ano-valor" class="mono">2026</output>
+    <div class="tempo-barra__estado" id="tempo-estado"></div>
+  </div>
+
   <figcaption class="mapa__pe">
     <span class="escala"><span class="escala__barras"><i></i><i></i><i></i><i></i></span><span id="escala-txt">—</span></span>
     <span class="mapa__coord mono" id="coord">—</span>
@@ -136,6 +143,25 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     font-size: var(--t-xs); line-height: 1.5; color: var(--ink-2);
   }
 
+  .tempo-barra {
+    display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+    border-top: 1px solid var(--neat); background: var(--ground);
+    padding: var(--s-2) var(--s-3);
+  }
+  .tempo-barra label {
+    font-family: var(--sans); font-size: var(--t-xs); font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .tempo-barra input[type="range"] { flex: 1; min-width: 160px; accent-color: var(--brass); }
+  .tempo-barra output { font-size: var(--t-sm); color: var(--ink); min-width: 4.5ch; text-align: right; }
+  .tempo-barra__estado { display: flex; gap: .3rem; flex-wrap: wrap; }
+  .tempo-barra__estado span {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .06em; text-transform: uppercase;
+    border: 1px solid currentColor; padding: .1rem .3rem; color: var(--ink-3);
+  }
+  .tempo-barra__estado span.vigente { color: var(--cert-exata); }
+  .tempo-barra__estado span.revogada { color: var(--cert-estimada); }
+
   .mapa__pe {
     display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
     border-top: 1px solid var(--neat); background: var(--sheet);
@@ -171,6 +197,8 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
   import maplibregl from 'maplibre-gl';
   import 'maplibre-gl/dist/maplibre-gl.css';
   import { lerEstado, escreverEstado, agrupar, indicatriz } from '../lib/estado-mapa';
+import { ANO_MAXIMO, TORDESILHAS, tordesilhas, vigenteEm, estadoDeVigencia } from '../lib/tempo';
+import { capitais } from '../data/paises/brasil';
 
   const campo = document.getElementById('campo');
   if (campo) iniciar(campo);
@@ -183,6 +211,7 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     const inicial = lerEstado();
     const ligadas = inicial.camadas ?? new Set(PADRAO);
     let projecao: 'mercator' | 'globe' = inicial.proj ?? 'mercator';
+    let ano = inicial.ano ?? ANO_MAXIMO;
 
     // descritor da pirâmide de relevo; ausente = projeto sem `npm run relevo`
     const rel = await fetch('/dados/relevo.json').then((r) => r.json()).catch(() => null);
@@ -194,11 +223,15 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
       hidrografia: { type: 'geojson', data: '/dados/hidrografia.geojson' },
       graticulado: { type: 'geojson', data: '/dados/graticulado.geojson' },
       tissot:      { type: 'geojson', data: indicatriz(500) as never },
+      tordesilhas: { type: 'geojson', data: tordesilhas() as never },
+      capital:     { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as never },
     };
     if (rel) {
       fontes.relevo = {
         type: 'raster',
-        tiles: [new URL(rel.esquema, location.origin).toString()],
+        // concatenação crua de propósito: new URL() percent-codifica as chaves
+        // {z}/{x}/{y} e o MapLibre passa a pedir um arquivo com esse nome literal
+        tiles: [location.origin + rel.esquema],
         tileSize: rel.tamanhoLadrilho,
         minzoom: rel.minzoom,
         maxzoom: rel.maxzoom,          // além disso o MapLibre reamplia o último nível
@@ -252,6 +285,24 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
         } },
       { id: 'brasil-linha', type: 'line', source: 'brasil',
         paint: { 'line-color': tok('--neat'), 'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1.2, 7, 2.4] } },
+      /* Tordesilhas: a faixa é a incerteza do meridiano, não um enfeite. Ver
+         src/lib/tempo.ts — o tratado não fixa uma linha única. */
+      { id: 'tordesilhas-faixa', type: 'fill', source: 'tordesilhas',
+        filter: ['==', ['get', 'tipo'], 'faixa'],
+        layout: { visibility: 'none' },
+        paint: { 'fill-color': tok('--cert-estimada'), 'fill-opacity': 0.18 } },
+      { id: 'tordesilhas-tracado', type: 'line', source: 'tordesilhas',
+        filter: ['==', ['get', 'tipo'], 'tracado'],
+        layout: { visibility: 'none' },
+        paint: { 'line-color': tok('--cert-estimada'), 'line-width': 1.4, 'line-dasharray': [4, 3] } },
+      /* capital em vigor no ano: símbolo clássico de anel, não rótulo, para não
+         duplicar com os nomes de cidade vindos do gazeteiro */
+      { id: 'capital-halo', type: 'circle', source: 'capital',
+        paint: { 'circle-radius': 9, 'circle-color': 'transparent',
+                 'circle-stroke-width': 1, 'circle-stroke-color': tok('--survey'), 'circle-stroke-opacity': 0.5 } },
+      { id: 'capital-ponto', type: 'circle', source: 'capital',
+        paint: { 'circle-radius': 4.5, 'circle-color': tok('--sheet'),
+                 'circle-stroke-width': 2.5, 'circle-stroke-color': tok('--survey') } },
       // indicatriz por cima de tudo: ela é instrumento de medida, não conteúdo
       { id: 'tissot-area', type: 'fill', source: 'tissot',
         layout: { visibility: vis('tissot') },
@@ -295,6 +346,9 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
         ['brasil-linha', 'line-color', '--neat'],
         ['tissot-area', 'fill-color', '--survey'],
         ['tissot-linha', 'line-color', '--survey'],
+        ['tordesilhas-faixa', 'fill-color', '--cert-estimada'],
+        ['tordesilhas-tracado', 'line-color', '--cert-estimada'],
+        ['capital-ponto', 'circle-color', '--sheet'],
       ];
       for (const [camada, prop, token] of def) {
         if (mapa.getLayer(camada)) mapa.setPaintProperty(camada, prop as never, tok(token));
@@ -306,7 +360,7 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     /* --- permalink de estado ----------------------------------------------- */
     const gravar = agrupar(220, () => {
       const c = mapa.getCenter();
-      escreverEstado({ z: mapa.getZoom(), lat: c.lat, lon: c.lng, proj: projecao, camadas: ligadas });
+      escreverEstado({ z: mapa.getZoom(), lat: c.lat, lon: c.lng, proj: projecao, camadas: ligadas, ano });
     });
     mapa.on('moveend', gravar);
     mapa.on('zoomend', gravar);
@@ -505,6 +559,71 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     mapa.on('zoom', atualizarEscala);
     mapa.on('moveend', atualizarEscala);   // em Mercator a escala muda com a latitude
     mapa.on('load', atualizarEscala);
+
+    /* =====================================================================
+       O TEMPO COMANDA AS CAMADAS
+       Mover o ano não troca de página: troca o que está em vigor. Cada item
+       carrega a própria vigência, e é ela que decide o que aparece.
+       ===================================================================== */
+    const barraAno = document.getElementById('ano') as HTMLInputElement | null;
+    const valorAno = document.getElementById('ano-valor');
+    const estadoTempo = document.getElementById('tempo-estado');
+
+    function aplicarAno(novo: number, gravarTambem = true) {
+      ano = novo;
+      if (valorAno) valorAno.textContent = String(novo);
+      if (barraAno && Number(barraAno.value) !== novo) barraAno.value = String(novo);
+
+      // capital em vigor no ano
+      const capital = capitais.find((c) => vigenteEm(c.vigencia, novo));
+      const fonteCapital = mapa.getSource('capital') as maplibregl.GeoJSONSource | undefined;
+      fonteCapital?.setData({
+        type: 'FeatureCollection',
+        features: capital
+          ? [{
+              type: 'Feature',
+              properties: { nome: capital.nome.valor },
+              geometry: { type: 'Point', coordinates: capital.ponto },
+            }]
+          : [],
+      });
+
+      // Tordesilhas: some antes de 1494, vigora até 1750, depois fica como traço histórico
+      const tord = estadoDeVigencia({ de: TORDESILHAS.assinado, ate: TORDESILHAS.revogado }, novo);
+      const mostrarTord = tord !== 'ainda não';
+      for (const camada of ['tordesilhas-faixa', 'tordesilhas-tracado']) {
+        if (mapa.getLayer(camada)) {
+          mapa.setLayoutProperty(camada, 'visibility', mostrarTord ? 'visible' : 'none');
+        }
+      }
+      if (mapa.getLayer('tordesilhas-faixa')) {
+        mapa.setPaintProperty('tordesilhas-faixa', 'fill-opacity', tord === 'em vigor' ? 0.18 : 0.07);
+      }
+      if (mapa.getLayer('tordesilhas-tracado')) {
+        mapa.setPaintProperty('tordesilhas-tracado', 'line-opacity', tord === 'em vigor' ? 1 : 0.4);
+      }
+
+      if (estadoTempo) {
+        const fichas: string[] = [];
+        fichas.push(capital
+          ? `<span class="vigente">capital: ${capital.nome.valor}</span>`
+          : '<span>sem capital constituída</span>');
+        if (mostrarTord) {
+          fichas.push(tord === 'em vigor'
+            ? '<span class="vigente">Tordesilhas em vigor</span>'
+            : '<span class="revogada">Tordesilhas revogada em 1750</span>');
+        }
+        if (novo < ANO_MAXIMO) {
+          fichas.push('<span>fronteiras e cidades ainda são as de hoje</span>');
+        }
+        estadoTempo.innerHTML = fichas.join('');
+      }
+
+      if (gravarTambem) gravar();
+    }
+
+    barraAno?.addEventListener('input', () => aplicarAno(Number(barraAno.value)));
+    mapa.once('load', () => aplicarAno(ano, false));
 
     /* --- pilha de camadas --------------------------------------------------- */
     const alvos: Record<string, string[]> = {

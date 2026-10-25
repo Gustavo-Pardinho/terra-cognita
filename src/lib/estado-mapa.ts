@@ -4,9 +4,11 @@
    mandar exatamente a sua vista — e é o que torna uma prancha citável. Ver PR. 04.
 
    Formato legível de propósito, para poder ser editado à mão e explicado numa
-   aula:  #z=4.2&lat=-14.5&lon=-52.5&proj=globo&cam=relevo,ufs,rotulos
-   A Fase 2 acrescenta `ano` aqui, sem quebrar os links já existentes.
+   aula:  #z=4.2&lat=-14.5&lon=-52.5&proj=globe&cam=relevo,ufs,rotulos&ano=1650
+   `ano` é opcional: links da Fase 1, sem ele, continuam abrindo no presente.
    ========================================================================== */
+
+import { ANO_MAXIMO } from './tempo';
 
 export interface EstadoMapa {
   z?: number;
@@ -14,6 +16,8 @@ export interface EstadoMapa {
   lon?: number;
   proj?: 'mercator' | 'globe';
   camadas?: Set<string>;
+  /** ano em vigor na prancha; ausente = presente */
+  ano?: number;
 }
 
 const NUM = (v: string | null): number | undefined => {
@@ -34,6 +38,7 @@ export function lerEstado(hash = location.hash): EstadoMapa {
     lon: NUM(p.get('lon')),
     proj: proj === 'globe' || proj === 'mercator' ? proj : undefined,
     camadas: cam === null ? undefined : new Set(cam ? cam.split(',') : []),
+    ano: NUM(p.get('ano')),
   };
 }
 
@@ -43,13 +48,17 @@ function arredondar(v: number, zoom: number): number {
   return Number(v.toFixed(casas));
 }
 
-export function escreverEstado(e: Required<Omit<EstadoMapa, 'camadas'>> & { camadas: Set<string> }): void {
+export function escreverEstado(
+  e: Required<Omit<EstadoMapa, 'camadas' | 'ano'>> & { camadas: Set<string>; ano?: number },
+): void {
   const p = new URLSearchParams();
   p.set('z', String(Number(e.z.toFixed(2))));
   p.set('lat', String(arredondar(e.lat, e.z)));
   p.set('lon', String(arredondar(e.lon, e.z)));
   p.set('proj', e.proj);
   p.set('cam', [...e.camadas].join(','));
+  // só grava o ano quando o leitor saiu do presente: link curto no caso comum
+  if (e.ano !== undefined && e.ano < ANO_MAXIMO) p.set('ano', String(Math.round(e.ano)));
   const novo = `#${p.toString()}`;
   if (novo === location.hash) return;
   // replaceState: arrastar o mapa não deve encher o histórico do navegador

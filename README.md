@@ -3,9 +3,8 @@
 Atlas de estudo do mundo. Geografia, história, geopolítica, economia, ideias e
 vestígios tratados como camadas de um mesmo mapa — com fonte em toda afirmação.
 
-**Estado: Fase 1** — o mapa-mãe. O molde da Fase 0 provou que aguenta conteúdo real;
-agora o mapa tem pirâmide de ladrilhos, pilha de camadas, inspetor de clique,
-permalink de estado e indicatriz de Tissot.
+**Estado: Fase 2** — o tempo. O mapa-mãe da Fase 1 ganhou um controle de ano, e a
+vigência de cada item passa a decidir o que aparece.
 
 ## Rodar
 
@@ -76,13 +75,39 @@ src/islands/               ilhas interativas (MapLibre)
 scripts/preparar-geodados  recorte do Natural Earth
 ```
 
+## O tempo
+
+Mover o ano não troca de página: troca o que está em vigor. Cada item do acervo carrega
+a própria `vigencia`, e nada no código sabe o que é uma capital — a sequência
+Salvador (1549–1763) → Rio de Janeiro (1763–1960) → Brasília (1960–) move o marcador
+porque é isso que as datas dizem.
+
+A **linha de Tordesilhas** é a primeira camada histórica. Ela é o caso exemplar da
+PR. 05: o tratado fixa o limite a 370 léguas a oeste de Cabo Verde, e qual meridiano é
+isso depende da légua e da ilha de referência — ambas disputadas à época. Desenhar uma
+linha fina ali seria inventar precisão que a fonte não tem, então o mapa desenha a
+**faixa inteira** de incerteza, com o traçado tradicional pontilhado dentro. Antes de
+1494 ela não existe; de 1494 a 1750 vigora; depois fica como traço histórico apagado.
+
+A página `/tempo` traz o eixo proporcional dos marcos — nele se vê que 1888 e 1889 são
+colados e que entre 1763 e 1822 há meio século de silêncio nesta prancha — e o corte
+sincrônico, que responde o que uma lista cronológica não responde: *o que mais estava
+valendo neste ano?*
+
+O que **ainda não varia**: fronteiras, estados e nomes de cidade são os de hoje.
+Fronteira histórica exige geometria datada, que o acervo ainda não tem, e desenhar a de
+hoje fingindo ser a de 1650 seria o erro que este atlas existe para não cometer.
+
 ## Permalink de estado
 
-O endereço guarda centro, zoom, projeção e camadas ligadas:
+O endereço guarda centro, zoom, projeção, camadas ligadas e o ano:
 
 ```
-#z=5.4&lat=-23.55&lon=-46.63&proj=mercator&cam=relevo,rotulos,tissot
+#z=5.4&lat=-23.55&lon=-46.63&proj=mercator&cam=relevo,rotulos,tissot&ano=1650
 ```
+
+`ano` só é gravado quando o leitor sai do presente, e links da Fase 1 sem ele continuam
+abrindo normalmente.
 
 Formato legível de propósito, para poder ser editado à mão e explicado numa aula.
 A gravação usa `replaceState` — arrastar o mapa não deve encher o histórico. A Fase 2

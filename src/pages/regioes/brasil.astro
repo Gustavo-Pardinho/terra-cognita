@@ -13,7 +13,7 @@ import Fontes from '../../components/Fontes.astro';
 import Pendencias from '../../components/Pendencias.astro';
 import RampaHipso from '../../components/RampaHipso.astro';
 import MapaPrancha from '../../islands/MapaPrancha.astro';
-import { brasil, marcos, registroBrasil } from '../../data/paises/brasil';
+import { brasil, capitais, capitalAtual, marcos, registroBrasil } from '../../data/paises/brasil';
 import { formatarVigencia, formatarCoordenada } from '../../lib/acervo';
 
 const r = registroBrasil();
@@ -33,7 +33,7 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
         <dl class="ficha">
           <div><dt>Vigência</dt><dd class="mono">{formatarVigencia(brasil.vigencia)}</dd></div>
           <div><dt>Ponto representativo</dt><dd class="mono">{formatarCoordenada(brasil.ponto!)}</dd></div>
-          <div><dt>Capital</dt><dd><Dado r={r} k="brasil.capital.nome" /> <span class="fina">desde <Dado r={r} k="brasil.capital.desde" /></span></dd></div>
+          <div><dt>Capital</dt><dd><Dado r={r} k={`capitais.${capitais.length - 1}.nome`} /> <span class="fina">desde {capitalAtual.vigencia.de}</span></dd></div>
           <div><dt>Área</dt><dd><Dado r={r} k="brasil.fisico.area" /></dd></div>
           <div><dt>População</dt><dd><Dado r={r} k="brasil.povo.populacao" comAno /></dd></div>
         </dl>
