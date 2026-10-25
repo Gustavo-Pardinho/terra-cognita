@@ -5,7 +5,7 @@
    citada; a prancha exibe essa pendência ao leitor. Ver PR. 05.
    ========================================================================== */
 
-import type { Fato, Item, Relacao, Vigencia } from '../../lib/acervo';
+import { criarRegistro, type Fato, type Item, type Relacao, type Vigencia } from '../../lib/acervo';
 
 export interface Pais extends Item {
   fisico: {
@@ -62,7 +62,7 @@ export const brasil: Pais = {
       nota: 'Remedição do Pico da Neblina; o valor histórico de 3.014 m circulou por décadas.' },
     pontoMaisAlto: { valor: 'Pico da Neblina (AM)', fonte: 'geonames', verificar: true },
     fronteiraTerrestre: { valor: 16886, unidade: 'km', fonte: 'itamaraty-limites', precisao: 'aproximada', verificar: true,
-      nota: 'Faz fronteira com 10 dos 12 países sul-americanos; só Chile e Equador ficam de fora.' },
+      nota: 'Faz fronteira com 9 dos 12 países sul-americanos — só Chile e Equador ficam de fora — mais a Guiana Francesa, que é departamento ultramarino da França e não país sul-americano.' },
     litoral: { valor: 7491, unidade: 'km', fonte: 'ibge-area', precisao: 'aproximada', verificar: true,
       nota: 'Medida da linha de costa sem recortes; com reentrâncias o número é bem maior.' },
     extremoNorte: { valor: 'Monte Caburaí, Roraima', fonte: 'geonames', verificar: true },
@@ -123,24 +123,74 @@ export const brasil: Pais = {
   ] satisfies Relacao[],
 };
 
-/** marcos da linha do tempo — a lente Tempo lendo o mesmo item do acervo */
-export const marcos: Array<{ ano: number; titulo: string; nota: string; fonte: string; vigencia?: Vigencia }> = [
-  { ano: 1500, titulo: 'Chegada da frota de Cabral', fonte: 'constituicao-1988',
-    nota: 'O litoral entra na cartografia europeia; a ocupação indígena do território é de pelo menos 12 mil anos antes.' },
-  { ano: 1549, titulo: 'Governo-geral em Salvador', fonte: 'constituicao-1988',
-    nota: 'Primeira capital e primeiro aparato administrativo centralizado da colônia.' },
-  { ano: 1763, titulo: 'Capital transferida para o Rio de Janeiro', fonte: 'constituicao-1988',
-    nota: 'Deslocamento do eixo econômico do açúcar nordestino para o ouro das Minas.' },
-  { ano: 1822, titulo: 'Independência', fonte: 'constituicao-1988',
-    nota: 'Ruptura sem fragmentação territorial — o oposto do que ocorreu na América espanhola.' },
-  { ano: 1888, titulo: 'Abolição da escravidão', fonte: 'constituicao-1988',
-    nota: 'Último país das Américas a abolir; cerca de 4,9 milhões de africanos escravizados desembarcaram no território.' },
-  { ano: 1889, titulo: 'Proclamação da República', fonte: 'constituicao-1988',
-    nota: 'Fim do único império duradouro da América do Sul.' },
-  { ano: 1960, titulo: 'Inauguração de Brasília', fonte: 'constituicao-1988',
-    nota: 'A capital move-se para o planalto central: decisão geopolítica de interiorização.' },
-  { ano: 1964, titulo: 'Golpe militar', fonte: 'constituicao-1988',
-    nota: 'Vinte e um anos de regime autoritário, encerrados em 1985.' },
-  { ano: 1988, titulo: 'Constituição cidadã', fonte: 'constituicao-1988',
-    nota: 'Redesenha o federalismo e eleva o município a ente federado.' },
+/**
+ * Marcos da linha do tempo — a lente Tempo lendo o mesmo item do acervo.
+ *
+ * A data de cada marco é um `Fato`: é ela a afirmação que a fonte sustenta.
+ * Sem isso a fonte não é validada no build nem entra na lista da prancha, e foi
+ * exatamente o buraco que deixou 18 afirmações de 1500 a 1964 citando a
+ * Constituição de 1988 como fonte.
+ */
+export const marcos: Array<{ ano: Fato<number>; titulo: string; nota: string }> = [
+  {
+    ano: { valor: 1500, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    titulo: 'Chegada da frota de Cabral',
+    nota: 'O litoral entra na cartografia europeia; a ocupação indígena do território é de pelo menos 12 mil anos antes.',
+  },
+  {
+    ano: { valor: 1549, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    titulo: 'Governo-geral em Salvador',
+    nota: 'Primeira capital e primeiro aparato administrativo centralizado da colônia.',
+  },
+  {
+    ano: { valor: 1763, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    titulo: 'Capital transferida para o Rio de Janeiro',
+    nota: 'Deslocamento do eixo econômico do açúcar nordestino para o ouro das Minas.',
+  },
+  {
+    ano: { valor: 1822, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
+    titulo: 'Independência',
+    nota: 'Ruptura sem fragmentação territorial — o oposto do que ocorreu na América espanhola.',
+  },
+  {
+    ano: { valor: 1888, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
+    titulo: 'Abolição da escravidão',
+    nota: 'Lei nº 3.353, de 13 de maio. Último país das Américas a abolir.',
+  },
+  {
+    ano: { valor: 1889, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
+    titulo: 'Proclamação da República',
+    nota: 'Fim do único império duradouro da América do Sul.',
+  },
+  {
+    ano: { valor: 1960, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
+    titulo: 'Inauguração de Brasília',
+    nota: 'A capital move-se para o planalto central: decisão geopolítica de interiorização.',
+  },
+  {
+    ano: { valor: 1964, formato: 'ano', fonte: 'arquivo-nacional', precisao: 'exata', verificar: true },
+    titulo: 'Golpe militar',
+    nota: 'Vinte e um anos de regime autoritário, encerrados em 1985.',
+  },
+  {
+    ano: { valor: 1988, formato: 'ano', fonte: 'constituicao-1988', precisao: 'exata' },
+    titulo: 'Constituição cidadã',
+    nota: 'Redesenha o federalismo e eleva o município a ente federado.',
+  },
 ];
+
+/** Estimativa do tráfico transatlântico com destino ao território brasileiro. */
+export const trafico = {
+  desembarcados: {
+    valor: 4.9, unidade: 'milhões', fonte: 'slavevoyages',
+    precisao: 'estimada', verificar: true,
+    nota: 'Africanos escravizados desembarcados no Brasil entre 1561 e 1856; a maior cifra de qualquer destino nas Américas.',
+  } satisfies Fato<number>,
+};
+
+/**
+ * Registro da prancha do Brasil. Existe num lugar só porque duas páginas o
+ * exibem — a prancha e o índice de regiões — e montá-lo duas vezes com entradas
+ * diferentes fazia os números divergirem para o mesmo item.
+ */
+export const registroBrasil = () => criarRegistro({ brasil, marcos, trafico });

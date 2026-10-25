@@ -103,7 +103,7 @@ export function criarRegistro(dados: unknown): Registro {
   // percorre em profundidade, estável: chaves na ordem de declaração
   (function percorrer(no: unknown, caminho: string): void {
     if (Array.isArray(no)) {
-      no.forEach((item, i) => percorrer(item, `${caminho}[${i}]`));
+      no.forEach((item, i) => percorrer(item, caminho ? `${caminho}.${i}` : String(i)));
       return;
     }
     if (typeof no !== 'object' || no === null) return;

@@ -13,10 +13,10 @@ import Fontes from '../../components/Fontes.astro';
 import Pendencias from '../../components/Pendencias.astro';
 import RampaHipso from '../../components/RampaHipso.astro';
 import MapaPrancha from '../../islands/MapaPrancha.astro';
-import { brasil, marcos } from '../../data/paises/brasil';
-import { criarRegistro, formatarVigencia, formatarCoordenada, formatarAno } from '../../lib/acervo';
+import { brasil, marcos, registroBrasil } from '../../data/paises/brasil';
+import { formatarVigencia, formatarCoordenada } from '../../lib/acervo';
 
-const r = criarRegistro(brasil);
+const r = registroBrasil();
 const limitrofes = brasil.relacoes!.filter((x) => x.tipo === 'faz-fronteira-com');
 const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencias().length} a conferir`;
 ---
@@ -28,14 +28,14 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
       <div>
         <h1 class="nome">Brasil</h1>
         <p class="oficial">
-          <Dado r={r} k="nomeOficial" />
+          <Dado r={r} k="brasil.nomeOficial" />
         </p>
         <dl class="ficha">
           <div><dt>Vigência</dt><dd class="mono">{formatarVigencia(brasil.vigencia)}</dd></div>
           <div><dt>Ponto representativo</dt><dd class="mono">{formatarCoordenada(brasil.ponto!)}</dd></div>
-          <div><dt>Capital</dt><dd><Dado r={r} k="capital.nome" /> <span class="fina">desde <Dado r={r} k="capital.desde" /></span></dd></div>
-          <div><dt>Área</dt><dd><Dado r={r} k="fisico.area" /></dd></div>
-          <div><dt>População</dt><dd><Dado r={r} k="povo.populacao" comAno /></dd></div>
+          <div><dt>Capital</dt><dd><Dado r={r} k="brasil.capital.nome" /> <span class="fina">desde <Dado r={r} k="brasil.capital.desde" /></span></dd></div>
+          <div><dt>Área</dt><dd><Dado r={r} k="brasil.fisico.area" /></dd></div>
+          <div><dt>População</dt><dd><Dado r={r} k="brasil.povo.populacao" comAno /></dd></div>
         </dl>
       </div>
       <aside class="legenda">
@@ -44,8 +44,8 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
         <p class="fina" style="margin-top:var(--s-3)">
           A mesma rampa serve a prancha inteira. O relevo brasileiro ocupa só a
           faixa baixa: o ponto mais alto do país,
-          <Dado r={r} k="fisico.pontoMaisAlto" />, chega a
-          <Dado r={r} k="fisico.altitudeMaxima" /> — menos da metade do
+          <Dado r={r} k="brasil.fisico.pontoMaisAlto" />, chega a
+          <Dado r={r} k="brasil.fisico.altitudeMaxima" /> — menos da metade do
           Aconcágua, na mesma América do Sul.
         </p>
       </aside>
@@ -61,7 +61,7 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
         <p>
           O território brasileiro é grande o bastante para que nenhuma classe climática
           o descreva: a classificação dominante é
-          <Dado r={r} k="fisico.climaDominante" />, mas o mesmo país contém semiárido,
+          <Dado r={r} k="brasil.fisico.climaDominante" />, mas o mesmo país contém semiárido,
           cerrado tropical sazonal e subtropical úmido de inverno frio. A ausência de uma
           cordilheira interna é a característica física que mais consequências políticas
           produziu — o país não tem barreira orográfica que separe suas regiões, e os rios
@@ -69,14 +69,14 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
         </p>
         <h3>Medidas</h3>
         <dl class="ficha">
-          <div><dt>Área total</dt><dd><Dado r={r} k="fisico.area" /></dd></div>
-          <div><dt>Fronteira terrestre</dt><dd><Dado r={r} k="fisico.fronteiraTerrestre" /></dd></div>
-          <div><dt>Linha de costa</dt><dd><Dado r={r} k="fisico.litoral" /></dd></div>
-          <div><dt>Altitude máxima</dt><dd><Dado r={r} k="fisico.altitudeMaxima" /></dd></div>
-          <div><dt>Extremo norte</dt><dd><Dado r={r} k="fisico.extremoNorte" /></dd></div>
-          <div><dt>Extremo sul</dt><dd><Dado r={r} k="fisico.extremoSul" /></dd></div>
-          <div><dt>Biomas</dt><dd><Dado r={r} k="fisico.biomas" /></dd></div>
-          <div><dt>Maior bioma</dt><dd><Dado r={r} k="fisico.maiorBioma" /></dd></div>
+          <div><dt>Área total</dt><dd><Dado r={r} k="brasil.fisico.area" /></dd></div>
+          <div><dt>Fronteira terrestre</dt><dd><Dado r={r} k="brasil.fisico.fronteiraTerrestre" /></dd></div>
+          <div><dt>Linha de costa</dt><dd><Dado r={r} k="brasil.fisico.litoral" /></dd></div>
+          <div><dt>Altitude máxima</dt><dd><Dado r={r} k="brasil.fisico.altitudeMaxima" /></dd></div>
+          <div><dt>Extremo norte</dt><dd><Dado r={r} k="brasil.fisico.extremoNorte" /></dd></div>
+          <div><dt>Extremo sul</dt><dd><Dado r={r} k="brasil.fisico.extremoSul" /></dd></div>
+          <div><dt>Biomas</dt><dd><Dado r={r} k="brasil.fisico.biomas" /></dd></div>
+          <div><dt>Maior bioma</dt><dd><Dado r={r} k="brasil.fisico.maiorBioma" /></dd></div>
         </dl>
       </div>
       <aside>
@@ -102,10 +102,10 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
       <div class="verbete">
         <h3>Povo</h3>
         <dl class="ficha">
-          <div><dt>População</dt><dd><Dado r={r} k="povo.populacao" comAno /></dd></div>
-          <div><dt>Densidade</dt><dd><Dado r={r} k="povo.densidade" /></dd></div>
-          <div><dt>Urbanização</dt><dd><Dado r={r} k="povo.urbanizacao" /></dd></div>
-          <div><dt>Idioma oficial</dt><dd><Dado r={r} k="povo.idioma" /></dd></div>
+          <div><dt>População</dt><dd><Dado r={r} k="brasil.povo.populacao" comAno /></dd></div>
+          <div><dt>Densidade</dt><dd><Dado r={r} k="brasil.povo.densidade" /></dd></div>
+          <div><dt>Urbanização</dt><dd><Dado r={r} k="brasil.povo.urbanizacao" /></dd></div>
+          <div><dt>Idioma oficial</dt><dd><Dado r={r} k="brasil.povo.idioma" /></dd></div>
         </dl>
         <p class="fina" style="margin-top:var(--s-4)">
           A densidade média esconde o fato central da geografia humana brasileira: a
@@ -118,12 +118,12 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
       <div class="verbete">
         <h3>Sistema político</h3>
         <dl class="ficha">
-          <div><dt>Forma de Estado</dt><dd><Dado r={r} k="politica.forma" /></dd></div>
-          <div><dt>Legislativo</dt><dd><Dado r={r} k="politica.sistema" /></dd></div>
-          <div><dt>Constituição vigente</dt><dd><Dado r={r} k="politica.constituicao" /></dd></div>
-          <div><dt>Unidades federativas</dt><dd><Dado r={r} k="politica.unidadesFederativas" /></dd></div>
-          <div><dt>Municípios</dt><dd><Dado r={r} k="politica.municipios" /></dd></div>
-          <div><dt>Eleitorado</dt><dd><Dado r={r} k="politica.eleitorado" comAno /></dd></div>
+          <div><dt>Forma de Estado</dt><dd><Dado r={r} k="brasil.politica.forma" /></dd></div>
+          <div><dt>Legislativo</dt><dd><Dado r={r} k="brasil.politica.sistema" /></dd></div>
+          <div><dt>Constituição vigente</dt><dd><Dado r={r} k="brasil.politica.constituicao" /></dd></div>
+          <div><dt>Unidades federativas</dt><dd><Dado r={r} k="brasil.politica.unidadesFederativas" /></dd></div>
+          <div><dt>Municípios</dt><dd><Dado r={r} k="brasil.politica.municipios" /></dd></div>
+          <div><dt>Eleitorado</dt><dd><Dado r={r} k="brasil.politica.eleitorado" comAno /></dd></div>
         </dl>
         <p class="fina" style="margin-top:var(--s-4)">
           A Constituição de 1988 fez do município um ente federado com competência
@@ -139,9 +139,9 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
     <div class="grade">
       <div class="verbete">
         <dl class="ficha">
-          <div><dt>PIB</dt><dd><Dado r={r} k="economia.pib" comAno /></dd></div>
-          <div><dt>PIB per capita</dt><dd><Dado r={r} k="economia.pibPerCapita" comAno /></dd></div>
-          <div><dt>Moeda</dt><dd><Dado r={r} k="economia.moeda" /></dd></div>
+          <div><dt>PIB</dt><dd><Dado r={r} k="brasil.economia.pib" comAno /></dd></div>
+          <div><dt>PIB per capita</dt><dd><Dado r={r} k="brasil.economia.pibPerCapita" comAno /></dd></div>
+          <div><dt>Moeda</dt><dd><Dado r={r} k="brasil.economia.moeda" /></dd></div>
         </dl>
         <div class="leitura" style="margin-top:var(--s-5)">
           O Brasil é a economia que mais consistentemente aparece na lista das dez
@@ -170,9 +170,9 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
       passa a comandar o mapa: mover o ano redesenha fronteiras, capitais e rotas.
     </p>
     <ol class="tempo">
-      {marcos.map((m) => (
+      {marcos.map((m, i) => (
         <li>
-          <span class="tempo__ano mono">{formatarAno(m.ano)}</span>
+          <span class="tempo__ano"><Dado r={r} k={`marcos.${i}.ano`} /></span>
           <div>
             <b>{m.titulo}</b>
             <p class="fina">{m.nota}</p>
@@ -180,6 +180,11 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
         </li>
       ))}
     </ol>
+    <p class="fina" style="margin-top:var(--s-4)">
+      Entre 1561 e 1856 desembarcaram no território cerca de
+      <Dado r={r} k="trafico.desembarcados" /> de africanos escravizados — a maior
+      cifra de qualquer destino nas Américas. Nenhum mapa do Brasil se explica sem isso.
+    </p>
   </Prancha>
 
   <!-- ===================== PRANCHA 06 — GEOPOLÍTICA ===================== -->
@@ -187,11 +192,12 @@ const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencia
     <div class="grade">
       <div class="verbete">
         <p>
-          O Brasil faz fronteira com <strong>{limitrofes.length}</strong> dos doze países
-          sul-americanos; só Chile e Equador ficam de fora. Essa é a característica que
-          define sua posição: nenhum vizinho é adversário histórico consolidado, e
-          nenhuma fronteira está hoje em litígio armado — situação incomum para um
-          território dessa extensão.
+          O Brasil tem <strong>{limitrofes.length}</strong> vizinhos terrestres:
+          <strong>{limitrofes.length - 1}</strong> dos doze países sul-americanos — só Chile
+          e Equador ficam de fora — mais a Guiana Francesa, que é departamento ultramarino
+          da França e não país sul-americano. Essa é a característica que define sua
+          posição: nenhum vizinho é adversário histórico consolidado, e nenhuma fronteira
+          está hoje em litígio armado — situação incomum para um território dessa extensão.
         </p>
         <h3>Relações do acervo</h3>
         <div class="rolagem">

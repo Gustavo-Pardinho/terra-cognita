@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import Prancha from '../components/Prancha.astro';
+---
+<Base titulo="Prancha inexistente" descricao="A prancha pedida não existe neste atlas.">
+  <Prancha n="PR. —" titulo="Prancha inexistente" meta="Erro 404">
+    <p class="abertura">
+      Esta prancha não existe. Pode ser um endereço digitado errado, ou uma seção que o
+      atlas ainda não alcançou — o que é mais provável, dado o tamanho do plano.
+    </p>
+    <h3>O que já existe</h3>
+    <ul class="lista">
+      <li><b><a href="/atlas">O Atlas</a></b> <span>— o mapa-mãe, com pilha de camadas e inspetor.</span></li>
+      <li><b><a href="/regioes">Regiões</a></b> <span>— o índice das pranchas de região.</span></li>
+      <li><b><a href="/regioes/brasil">Brasil</a></b> <span>— a prancha de país completa.</span></li>
+      <li><b><a href="/metodo">Método</a></b> <span>— fontes, licenças e política editorial.</span></li>
+    </ul>
+    <div class="nota" style="margin-top:var(--s-5)">
+      <strong>Índice de lugares e verbetes</strong> entram na Fase 3. Até lá, o atlas
+      prefere declarar a lacuna a servir uma página vazia.
+    </div>
+  </Prancha>
+</Base>

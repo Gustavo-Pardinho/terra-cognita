@@ -1,11 +1,12 @@
 ---
 import Rosa from './Rosa.astro';
 const aqui = Astro.url.pathname.replace(/\/$/, '') || '/';
+/** `fase` marca o que ainda não existe: vira rótulo apagado, não link para o vazio. */
 const secoes = [
   { href: '/atlas',    rotulo: 'O Atlas' },
-  { href: '/tempo',    rotulo: 'Tempo' },
+  { href: '/tempo',    rotulo: 'Tempo',    fase: 'Fase 2' },
   { href: '/regioes',  rotulo: 'Regiões' },
-  { href: '/verbetes', rotulo: 'Verbetes' },
+  { href: '/verbetes', rotulo: 'Verbetes', fase: 'Fase 3' },
   { href: '/metodo',   rotulo: 'Método' },
 ];
 ---
@@ -13,13 +14,25 @@ const secoes = [
   <a href="/" class="leme__marca"><Rosa tamanho={22} /> Terra Cognita</a>
   <nav aria-label="Seções do atlas">
     {secoes.map((s) => (
-      <a href={s.href} aria-current={aqui.startsWith(s.href) ? 'page' : undefined}>{s.rotulo}</a>
+      s.fase
+        ? <span class="leme__futuro" title={`Ainda não existe — entra na ${s.fase}`}>
+            {s.rotulo}<i>{s.fase}</i>
+          </span>
+        : <a href={s.href} aria-current={aqui.startsWith(s.href) ? 'page' : undefined}>{s.rotulo}</a>
     ))}
   </nav>
   <div class="leme__fim">
     <button class="tema" type="button" data-tema aria-live="polite">Tema</button>
   </div>
 </header>
+<style>
+  .leme__futuro { color: var(--ink-3); cursor: default; display: inline-flex; align-items: baseline; gap: .35rem; }
+  .leme__futuro i {
+    font-family: var(--mono); font-size: .58rem; font-style: normal;
+    letter-spacing: .08em; text-transform: uppercase;
+    border: 1px solid var(--rule); padding: .05rem .25rem; color: var(--ink-3);
+  }
+</style>
 <script>
   const b = document.querySelector<HTMLButtonElement>('[data-tema]');
   const raiz = document.documentElement;

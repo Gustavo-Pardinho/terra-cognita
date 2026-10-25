@@ -211,6 +211,14 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
 
     const camadas: maplibregl.LayerSpecification[] = [
       { id: 'oceano', type: 'background', paint: { 'background-color': tok('--h-pelagico') } },
+      /* Base política sob o relevo. Enquanto o relevo está ligado ela fica
+         escondida; serve para dois casos em que o relevo não cobre a tela:
+         quando o leitor desliga a camada, e quando sai da extensão assada.
+         Sem ela a terra fica da cor do oceano e a prancha se desfaz. */
+      { id: 'terra-vizinhos', type: 'fill', source: 'vizinhos',
+        paint: { 'fill-color': tok('--sunk') } },
+      { id: 'terra-brasil', type: 'fill', source: 'brasil',
+        paint: { 'fill-color': tok('--tinta-1') } },
     ];
     if (rel) camadas.push({
       id: 'relevo', type: 'raster', source: 'relevo',
@@ -219,7 +227,9 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     });
     camadas.push(
       // véu sobre os vizinhos: convenção de atlas para destacar o país em foco
+      // o véu acompanha o relevo: sem relevo, a base política já distingue os vizinhos
       { id: 'veu-vizinhos', type: 'fill', source: 'vizinhos',
+        layout: { visibility: vis('relevo') },
         paint: { 'fill-color': tok('--ground'), 'fill-opacity': 0.5 } },
       // alvos invisíveis de clique: linha é difícil de acertar com o ponteiro
       { id: 'ufs-alvo', type: 'fill', source: 'ufs', paint: { 'fill-opacity': 0 } },
@@ -261,7 +271,12 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
       style: { version: 8, sources: fontes, layers: camadas },
     });
     if (projecao === 'globe') mapa.once('load', () => mapa.setProjection({ type: 'globe' }));
-    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__mapa = mapa;
+    if (import.meta.env.DEV) {
+      const g = window as unknown as Record<string, unknown>;
+      g.__mapa = mapa;
+      // o estilo exato que esta ilha montou, para reaplicar em depuração
+      g.__estilo = { version: 8, sources: fontes, layers: camadas };
+    }
 
     mapa.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'bottom-left');
     campo.querySelector<HTMLElement>('.maplibregl-canvas')?.setAttribute('tabindex', '0');
@@ -271,7 +286,9 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     function repintar() {
       const def: Array<[string, string, string]> = [
         ['oceano', 'background-color', '--h-pelagico'],
-        ['veu-vizinhos', 'fill-color', '--ground'],
+        ['terra-vizinhos', 'fill-color', '--sunk'],
+      ['terra-brasil', 'fill-color', '--tinta-1'],
+      ['veu-vizinhos', 'fill-color', '--ground'],
         ['graticulado', 'line-color', '--ink'],
         ['ufs-linha', 'line-color', '--neat'],
         ['hidrografia-linha', 'line-color', '--agua'],
@@ -426,9 +443,9 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     };
     const coordenada = (lon: number, lat: number) => `${grau(lat, 'N', 'S')} ${grau(lon, 'L', 'O')}`;
 
-    document.getElementById('fechar-inspetor')?.addEventListener('click', () => {
-      if (inspetor) inspetor.hidden = true;
-    });
+    const fecharInspetor = () => { if (inspetor) inspetor.hidden = true; };
+    document.getElementById('fechar-inspetor')?.addEventListener('click', fecharInspetor);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharInspetor(); });
 
     mapa.on('click', (e) => {
       if (!inspetor || !corpo) return;
@@ -486,11 +503,12 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
       escalaTxt.textContent = `0 ——— ${km.toLocaleString('pt-BR')} km`;
     };
     mapa.on('zoom', atualizarEscala);
+    mapa.on('moveend', atualizarEscala);   // em Mercator a escala muda com a latitude
     mapa.on('load', atualizarEscala);
 
     /* --- pilha de camadas --------------------------------------------------- */
     const alvos: Record<string, string[]> = {
-      relevo: ['relevo'],
+      relevo: ['relevo', 'veu-vizinhos'],
       ufs: ['ufs-linha'],
       hidrografia: ['hidrografia-linha'],
       graticulado: ['graticulado'],

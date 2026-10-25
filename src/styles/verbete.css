@@ -5,19 +5,6 @@
 .verbete { max-width: min(var(--medida), 100%); }
 .verbete > * + * { margin-top: var(--s-4); }
 
-.verbete h2 {
-  font-family: var(--sans); font-weight: 600; font-size: var(--t-lg);
-  letter-spacing: -.005em; text-wrap: balance;
-  margin-top: var(--s-6);
-}
-.verbete h3 {
-  font-family: var(--sans); font-weight: 600; font-size: var(--t-xs);
-  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2);
-  padding-bottom: .4rem; border-bottom: var(--filete) solid var(--rule-fine);
-  margin-top: var(--s-6);
-}
-.verbete h4 { font-family: var(--sans); font-weight: 600; font-size: .95rem; margin-top: var(--s-5); }
-.verbete h2:first-child, .verbete h3:first-child, .verbete h4:first-child { margin-top: 0; }
 .verbete strong { font-weight: 600; }
 .verbete ul, .verbete ol { padding-left: 1.3rem; }
 .verbete li + li { margin-top: var(--s-2); }

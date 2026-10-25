@@ -1,0 +1,42 @@
+---
+/* O mapa-mãe. A mesma ilha da prancha de país, em escala de folha inteira. */
+import Base from '../layouts/Base.astro';
+import Prancha from '../components/Prancha.astro';
+import MapaPrancha from '../islands/MapaPrancha.astro';
+---
+<Base titulo="O Atlas" descricao="O mapa-mãe do Terra Cognita: relevo hipsométrico sombreado, limites, hidrografia e cidades, com pilha de camadas, inspetor e permalink de estado." larga>
+  <Prancha n={1} titulo="O mapa-mãe" meta="Fase 1 · extensão sul-americana">
+    <p class="abertura">
+      Relevo hipsométrico assado de um DEM real, limites políticos, hidrografia e
+      cidades. A pilha de camadas, o inspetor de clique e o endereço que guarda a
+      vista são o que o papel não consegue fazer.
+    </p>
+    <div style="margin-top:var(--s-5)">
+      <MapaPrancha altura="clamp(420px, 70vh, 760px)" />
+    </div>
+
+    <div class="grade" style="margin-top:var(--s-6)">
+      <div class="verbete">
+        <h3>Como ler esta prancha</h3>
+        <ul class="lista">
+          <li><b>Rampa hipsométrica</b> <span>— a cor é altitude, não categoria. A legenda no canto traz as faixas.</span></li>
+          <li><b>Véu sobre os vizinhos</b> <span>— convenção de atlas para destacar o território em foco. Desligue o relevo e a base política aparece.</span></li>
+          <li><b>Hierarquia de rótulo</b> <span>— versal espaçada é unidade territorial, redonda é cidade, itálico serifado azul é água.</span></li>
+          <li><b>Indicatriz</b> <span>— círculos de 500 km de raio verdadeiro. Troque a projeção e veja o que cada uma deforma.</span></li>
+          <li><b>Clique</b> <span>— abre o inspetor com o que o acervo sabe. Onde não sabe, ele diz.</span></li>
+        </ul>
+      </div>
+      <aside>
+        <div class="nota">
+          <strong>Extensão e resolução.</strong> O relevo cobre hoje a América do Sul,
+          assado até o nível 7 de zoom. O mapa não deixa aproximar além do nível 8 de
+          propósito: um atlas não deve blefar além da resolução do seu dado.
+        </div>
+        <div class="nota" style="margin-top:var(--s-4)">
+          <strong>O endereço é a vista.</strong> Arraste, aproxime, ligue camadas — o
+          endereço se reescreve. Copiar a barra é copiar exatamente o que está na tela.
+        </div>
+      </aside>
+    </div>
+  </Prancha>
+</Base>

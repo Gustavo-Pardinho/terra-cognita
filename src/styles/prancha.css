@@ -55,6 +55,23 @@
   .grade--par { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
 
+/* --- títulos dentro da prancha -------------------------------------------
+   Vale em toda a prancha, não só dentro de .verbete: as pranchas usam h3 para
+   separar blocos fora da coluna de leitura, e sem isto eles ficavam sem estilo. */
+.prancha h2 {
+  font-family: var(--sans); font-weight: 600; font-size: var(--t-lg);
+  letter-spacing: -.005em; text-wrap: balance; margin-top: var(--s-6);
+}
+.prancha h3 {
+  font-family: var(--sans); font-weight: 600; font-size: var(--t-xs);
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2);
+  padding-bottom: .4rem; border-bottom: var(--filete) solid var(--rule-fine);
+  margin-top: var(--s-6);
+}
+.prancha h4 { font-family: var(--sans); font-weight: 600; font-size: .95rem; margin-top: var(--s-5); }
+.prancha h2:first-child, .prancha h3:first-child, .prancha h4:first-child { margin-top: 0; }
+.verbete > h2:first-child, .verbete > h3:first-child, .verbete > h4:first-child { margin-top: 0; }
+
 /* --- caixa de legenda ----------------------------------------------------- */
 .legenda {
   border: var(--filete) solid var(--rule);

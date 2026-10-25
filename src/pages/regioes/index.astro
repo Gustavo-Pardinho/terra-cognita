@@ -1,0 +1,89 @@
+---
+import Base from '../../layouts/Base.astro';
+import Prancha from '../../components/Prancha.astro';
+import { registroBrasil } from '../../data/paises/brasil';
+
+const r = registroBrasil();
+const prontas = [{
+  slug: 'brasil', nome: 'Brasil', regiao: 'América do Sul',
+  fatos: r.total(), fontes: r.fontes().length, pendentes: r.pendencias().length,
+}];
+
+/** A hierarquia da PR. 03. O que não existe aparece como lacuna declarada. */
+const arvore = [
+  { nome: 'América do Sul', filhos: ['Brasil', 'Argentina', 'Bolívia', 'Chile', 'Colômbia', 'Equador', 'Guiana', 'Paraguai', 'Peru', 'Suriname', 'Uruguai', 'Venezuela'] },
+  { nome: 'América do Norte e Central', filhos: ['Canadá', 'Estados Unidos', 'México', 'América Central', 'Caribe'] },
+  { nome: 'Europa', filhos: ['Europa Ocidental', 'Europa Central', 'Bálcãs', 'Nórdicos', 'Leste Europeu'] },
+  { nome: 'África', filhos: ['Magreb', 'Sahel', 'Chifre da África', 'África Ocidental', 'África Central', 'África Austral'] },
+  { nome: 'Ásia', filhos: ['Oriente Médio', 'Cáucaso', 'Ásia Central', 'Sul da Ásia', 'Sudeste Asiático', 'Leste Asiático'] },
+  { nome: 'Oceania e Ártico', filhos: ['Austrália e Nova Zelândia', 'Melanésia', 'Polinésia', 'Ártico', 'Antártida'] },
+];
+---
+<Base titulo="Regiões" descricao="Índice das pranchas de região do Terra Cognita: continente, sub-região, país e unidade subnacional.">
+  <Prancha n={1} titulo="Regiões" meta={`${prontas.length} prancha pronta`}>
+    <p class="abertura">
+      A hierarquia vai de continente a cidade. Uma prancha excelente antes de duzentas
+      medianas — por isso o índice abaixo mostra o que existe e declara o que falta,
+      em vez de servir páginas vazias.
+    </p>
+
+    <h3>Pranchas prontas</h3>
+    <ul class="pranchas">
+      {prontas.map((p) => (
+        <li>
+          <a href={`/regioes/${p.slug}`}>
+            <span class="pranchas__nome">{p.nome}</span>
+            <span class="pranchas__meta mono">{p.fatos} fatos · {p.fontes} fontes · {p.pendentes} a conferir</span>
+            <span class="pranchas__onde">{p.regiao}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <h3>Hierarquia planejada</h3>
+    <div class="tronco">
+      {arvore.map((c) => (
+        <div class="tronco__ramo">
+          <h4>{c.nome}</h4>
+          <ul>
+            {c.filhos.map((f) => (
+              <li class={f === 'Brasil' ? 'pronto' : undefined}>
+                {f === 'Brasil' ? <a href="/regioes/brasil">{f}</a> : f}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+    <p class="fina" style="margin-top:var(--s-5)">
+      Cada nome acima é o slug de um item do acervo. Quando a prancha existir, o nome
+      vira link sem nenhuma alteração nos dados.
+    </p>
+  </Prancha>
+</Base>
+
+<style>
+  .pranchas { list-style: none; padding: 0; margin: 0 0 var(--s-5); }
+  .pranchas a {
+    display: grid; gap: .15rem var(--s-4); align-items: baseline;
+    grid-template-columns: 1fr auto; text-decoration: none;
+    border: 1px solid var(--rule); background: var(--ground);
+    padding: var(--s-3) var(--s-4);
+  }
+  .pranchas a:hover { border-color: var(--brass); }
+  .pranchas__nome { font-family: var(--serif); font-size: 1.3rem; text-transform: uppercase; letter-spacing: .05em; }
+  .pranchas__meta { font-size: var(--t-xs); color: var(--ink-3); text-align: right; }
+  .pranchas__onde { font-family: var(--sans); font-size: var(--t-xs); color: var(--ink-2); grid-column: 1; }
+
+  .tronco { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .tronco { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1000px) { .tronco { grid-template-columns: repeat(3, 1fr); } }
+  .tronco__ramo { background: var(--sheet); padding: var(--s-4); }
+  .tronco__ramo h4 { font-family: var(--sans); font-size: .9rem; font-weight: 600; margin-bottom: var(--s-2); }
+  .tronco__ramo ul { list-style: none; padding: 0; font-family: var(--sans); font-size: var(--t-sm); }
+  .tronco__ramo li { padding: .22rem 0; color: var(--ink-3); border-top: 1px solid var(--rule-fine); }
+  .tronco__ramo li:first-of-type { border-top: 0; }
+  .tronco__ramo li.pronto { color: var(--ink); }
+  .tronco__ramo li.pronto a { text-decoration-color: var(--brass); }
+</style>

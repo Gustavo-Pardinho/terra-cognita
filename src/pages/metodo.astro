@@ -1,0 +1,116 @@
+---
+/* Fontes e Método. Procedência é recurso de primeira classe, não rodapé. PR. 05. */
+import Base from '../layouts/Base.astro';
+import Prancha from '../components/Prancha.astro';
+import { FONTES, type Fonte } from '../lib/fontes';
+import { registroBrasil } from '../data/paises/brasil';
+
+const todas: Fonte[] = Object.values(FONTES);
+todas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+const emUso = new Set(registroBrasil().fontes().map((f) => f.id));
+
+/** licenças com cláusula não comercial, separadas por já estarem em uso ou não */
+const naoComercial = todas.filter((f) => /não.comercial|\bNC\b|-NC/i.test(f.licenca));
+
+const regras = [
+  ['Fonte por afirmação', 'Não por verbete. O rodapé coletivo não serve: o leitor precisa saber de onde veio aquele número, não aquela página.'],
+  ['Disputa mostrada como disputa', 'Com as reivindicações listadas e quem as faz. O atlas não resolve o litígio em silêncio escolhendo um lado.'],
+  ['Incerteza explícita', 'Data aproximada é desenhada como aproximada; fronteira inferida leva filete pontilhado. Nunca uma linha dura onde a fonte não tem uma linha dura.'],
+  ['Divergência preservada', 'Quando as fontes discordam, o verbete mostra as duas e diz quem defende cada uma.'],
+  ['Erro com histórico', 'Correção visível e datada, nunca edição silenciosa.'],
+];
+---
+<Base titulo="Método" descricao="Fontes, licenças e política editorial do Terra Cognita: como cada afirmação sabe de onde veio.">
+  <Prancha n={1} titulo="Fontes e método" meta={`${todas.length} acervos cadastrados · ${emUso.size} em uso`}>
+    <div class="grade">
+      <div class="verbete">
+        <h2>Procedência é recurso de primeira classe</h2>
+        <p>
+          A diferença entre este atlas e um blog com mapas bonitos é uma só:
+          <strong>toda afirmação sabe de onde veio</strong>, e o leitor confere em dois
+          cliques. Todo valor exibido é um <i>Fato</i> no acervo — valor, unidade, ano,
+          precisão e fonte. Citar uma fonte que não esteja cadastrada aqui
+          <strong>quebra o build</strong>; um número digitado direto no texto não tem como
+          ser renderizado.
+        </p>
+        <p>
+          Quando um valor foi lançado mas ainda não conferido contra o documento primário,
+          a prancha diz isso ao leitor. A lista de incertezas conhecidas é parte do método,
+          não um defeito a esconder.
+        </p>
+
+        <h3>Cinco regras editoriais</h3>
+        <ol class="regras">
+          {regras.map(([t, d]) => (
+            <li><b>{t}</b><span>{d}</span></li>
+          ))}
+        </ol>
+      </div>
+      <aside>
+        <div class="nota nota--alerta">
+          <strong>A licença muda o que o atlas pode ser.</strong>
+          {naoComercial.length === 1
+            ? 'Um acervo cadastrado traz cláusula não comercial'
+            : `${naoComercial.length} acervos cadastrados trazem cláusula não comercial`}, e
+          basta um em uso para o projeto ficar preso à forma sem fins lucrativos — coerente
+          com a intenção e com o domínio <span class="mono">.org</span>.
+          <ul class="lista" style="margin-top:var(--s-2)">
+            {naoComercial.map((f) => (
+              <li>
+                <b>{f.autor ?? f.titulo}</b> <span>— {f.licenca}</span>
+                <span class="mono" style="color:var(--ink-3)"> · {emUso.has(f.id) ? 'em uso' : 'cadastrado'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="nota" style="margin-top:var(--s-4)">
+          <strong>Atribuição no mapa, não só na página.</strong> A imagem exportada e a
+          prancha incorporada levam o crédito impresso dentro. É exigência de ODbL e CC BY,
+          e é o que faz o atlas ser citável.
+        </div>
+      </aside>
+    </div>
+
+    <h3>Acervos cadastrados</h3>
+    <div class="rolagem">
+      <table>
+        <thead><tr><th>Acervo</th><th>Serve para</th><th>Licença</th><th>Acesso</th><th>Uso</th></tr></thead>
+        <tbody>
+          {todas.map((f) => (
+            <tr>
+              <td>
+                {f.url ? <a href={f.url} rel="noopener noreferrer" target="_blank">{f.titulo}</a> : f.titulo}
+                {f.autor && <div class="fina">{f.autor}</div>}
+              </td>
+              <td class="fina">{f.nota ?? '—'}</td>
+              <td class="mono" style="font-size:var(--t-xs)">{f.licenca}</td>
+              <td class="num" style="font-size:var(--t-xs)">{f.acessoEm?.split('-').reverse().join('/') ?? '—'}</td>
+              <td>{emUso.has(f.id)
+                ? <span class="certeza certeza--exata">em uso</span>
+                : <span class="fina">cadastrado</span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="fina">
+      «Em uso» significa que alguma prancha já cita o acervo. «Cadastrado» é acervo
+      aprovado para uso, aguardando a prancha que vai precisar dele.
+    </p>
+  </Prancha>
+</Base>
+
+<style>
+  .regras { list-style: none; padding: 0; counter-reset: reg; }
+  .regras li {
+    display: grid; grid-template-columns: 2rem 1fr; gap: var(--s-3);
+    padding: var(--s-3) 0; border-top: 1px solid var(--rule-fine);
+  }
+  .regras li::before {
+    counter-increment: reg; content: counter(reg);
+    font-family: var(--mono); font-size: var(--t-xs); color: var(--brass); padding-top: .2rem;
+  }
+  .regras b { font-family: var(--sans); font-size: .95rem; display: block; grid-column: 2; }
+  /* sem isto o span escorrega para a coluna de 2rem do marcador e quebra palavra a palavra */
+  .regras span { grid-column: 2; font-size: var(--t-sm); color: var(--ink-2); line-height: 1.5; }
+</style>
