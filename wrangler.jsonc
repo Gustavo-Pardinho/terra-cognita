@@ -14,8 +14,9 @@
     // da plataforma. A prancha de 404 lista o que já existe no atlas.
     "not_found_handling": "404-page",
 
-    // Sem isto, /atlas/ e /atlas respondem coisas diferentes.
-    "html_handling": "auto-trailing-slash"
+    // Combina com trailingSlash:'never' do Astro: /atlas serve direto e
+    // /atlas/ redireciona para ele, em vez do contrário.
+    "html_handling": "drop-trailing-slash"
   },
 
   "observability": {
