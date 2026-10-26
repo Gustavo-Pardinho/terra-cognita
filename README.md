@@ -35,6 +35,11 @@ Fonte desconhecida **quebra o build** (`obterFonte` lança). Valor marcado
 `verificar: true` ainda não foi conferido contra o documento primário, e a prancha
 mostra a pendência ao leitor em vez de escondê-la.
 
+A prancha do Brasil passou por uma rodada completa de conferência em 26/10/2026:
+**29 valores conferidos, 6 errados e 4 fontes mal atribuídas**. Vale saber o que
+envelhece — o IBGE republica a área territorial todo ano, e o PIB tem estimativa
+preliminar antes dos dados definitivos. Valor com `ano` declarado é valor para revisitar.
+
 ## Mapa sem servidor
 
 O relevo é uma pirâmide de 345 ladrilhos PNG (z3–z7, 4,2 MB) assada de um DEM real

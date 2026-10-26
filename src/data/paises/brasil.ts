@@ -1,8 +1,16 @@
 /* =============================================================================
    BRASIL — item do acervo, tipo entidade-politica
-   Prancha de prova da Fase 0. Os valores marcados `verificar: true` foram
-   lançados de memória e ainda não foram conferidos contra a fonte primária
-   citada; a prancha exibe essa pendência ao leitor. Ver PR. 05.
+   Prancha de prova. Todos os valores foram conferidos contra a fonte citada em
+   26/10/2026 — a primeira rodada encontrou seis números errados e quatro fontes
+   mal atribuídas. Ver PR. 05.
+
+   Ao acrescentar valor novo, marque `verificar: true` até conferir no documento
+   primário: a prancha mostra a pendência ao leitor em vez de escondê-la, e é
+   isso que torna a lista de incertezas parte do método.
+
+   Atenção ao que envelhece: o IBGE republica a área territorial todo ano, e o
+   PIB tem estimativa preliminar antes dos dados definitivos. Valor com `ano`
+   declarado é valor que precisa ser revisitado.
    ========================================================================== */
 
 import { criarRegistro, type Fato, type Item, type Relacao, type Vigencia } from '../../lib/acervo';
@@ -64,28 +72,43 @@ export const brasil: Pais = {
   ponto: [-51.9253, -14.235],
 
   fisico: {
-    area: { valor: 8510345.5, unidade: 'km²', ano: 2022, fonte: 'ibge-area', precisao: 'exata', verificar: true },
-    altitudeMaxima: { valor: 2995.3, unidade: 'm', ano: 2016, fonte: 'copernicus-dem', precisao: 'exata', verificar: true,
-      nota: 'Remedição do Pico da Neblina; o valor histórico de 3.014 m circulou por décadas.' },
-    pontoMaisAlto: { valor: 'Pico da Neblina (AM)', fonte: 'geonames', verificar: true },
-    fronteiraTerrestre: { valor: 16886, unidade: 'km', fonte: 'itamaraty-limites', precisao: 'aproximada', verificar: true,
-      nota: 'Faz fronteira com 9 dos 12 países sul-americanos — só Chile e Equador ficam de fora — mais a Guiana Francesa, que é departamento ultramarino da França e não país sul-americano.' },
-    litoral: { valor: 7491, unidade: 'km', fonte: 'ibge-area', precisao: 'aproximada', verificar: true,
-      nota: 'Medida da linha de costa sem recortes; com reentrâncias o número é bem maior.' },
-    extremoNorte: { valor: 'Monte Caburaí, Roraima', fonte: 'geonames', verificar: true },
-    extremoSul: { valor: 'Arroio Chuí, Rio Grande do Sul', fonte: 'geonames', verificar: true },
-    biomas: { valor: 6, fonte: 'mapbiomas', precisao: 'exata', verificar: true,
-      nota: 'Amazônia, Cerrado, Mata Atlântica, Caatinga, Pampa e Pantanal.' },
-    maiorBioma: { valor: 'Amazônia', fonte: 'mapbiomas', verificar: true },
-    climaDominante: { valor: 'Af — equatorial úmido', fonte: 'koppen-beck', precisao: 'aproximada', verificar: true,
-      nota: 'O território cobre de Af a BSh; nenhuma classe única o descreve.' },
+    area: { valor: 8509360.85, unidade: 'km²', ano: 2026, fonte: 'ibge-area', precisao: 'exata',
+      nota: 'Portaria IBGE de março de 2026. A área oficial é republicada todo ano conforme os limites '
+          + 'municipais são refinados: esta edição recuou 18,7 km² em relação à de 2024.' },
+    altitudeMaxima: { valor: 2995.3, unidade: 'm', ano: 2016, fonte: 'ibge-altimetria', precisao: 'exata',
+      nota: 'O valor anterior do IBGE era 2.993,78 m. A revisão de 2016 somou 1,52 m ao recalcular com o '
+          + 'modelo geoidal MAPGEO2015 — mudou o método de medida, não a montanha.' },
+    pontoMaisAlto: { valor: 'Pico da Neblina (AM)', fonte: 'ibge-altimetria', precisao: 'exata',
+      nota: 'Serra do Imeri, na fronteira com a Venezuela, dentro da Terra Indígena Yanomami.' },
+    fronteiraTerrestre: { valor: 16886, unidade: 'km', fonte: 'itamaraty-limites', precisao: 'aproximada',
+      nota: 'Faz fronteira com 9 dos 12 países sul-americanos — só Chile e Equador ficam de fora — mais a '
+          + 'Guiana Francesa, que é departamento ultramarino da França e não país sul-americano.' },
+    litoral: { valor: 7491, unidade: 'km', fonte: 'ibge-area', precisao: 'aproximada',
+      nota: 'Do Oiapoque ao Chuí, medido sem recortes. Com reentrâncias o número é bem maior — o valor '
+          + 'depende da escala de medição, que é o paradoxo da linha de costa.' },
+    extremoNorte: { valor: 'Nascente do rio Ailã, Monte Caburaí (RR)', fonte: 'ibge-pontos-extremos', precisao: 'exata',
+      nota: 'Reconhecido oficialmente em 1998, fica cerca de 84 km ao norte do Oiapoque — que boa parte '
+          + 'dos livros escolares ainda ensina como o extremo norte.' },
+    extremoSul: { valor: 'Arroio Chuí, Chuí (RS)', fonte: 'ibge-pontos-extremos', precisao: 'exata' },
+    biomas: { valor: 6, ano: 2019, fonte: 'ibge-biomas-2019', precisao: 'exata',
+      nota: 'Amazônia (49,5% do território), Cerrado (23,3%), Mata Atlântica (13%), Caatinga (10,1%), '
+          + 'Pampa (2,3%) e Pantanal (1,8%).' },
+    maiorBioma: { valor: 'Amazônia', ano: 2019, fonte: 'ibge-biomas-2019', precisao: 'exata',
+      nota: 'Ocupa 49,5% do território — quase metade do país num só bioma.' },
+    climaDominante: { valor: 'Aw — tropical de savana', fonte: 'alvares-koppen-2013', precisao: 'exata',
+      nota: 'Aw cobre cerca de 33% do território, à frente de Am (~28%) e Af (~22%). A zona tropical A '
+          + 'soma 81,4% do país, mas nenhuma classe única o descreve: o território vai de Af a BSh.' },
   },
 
   povo: {
-    populacao: { valor: 203080756, unidade: 'hab.', ano: 2022, fonte: 'ibge-censo-2022', precisao: 'exata', verificar: true,
-      nota: 'Data de referência do Censo: 1º de agosto de 2022.' },
-    densidade: { valor: 23.9, unidade: 'hab./km²', ano: 2022, fonte: 'ibge-censo-2022', precisao: 'aproximada', verificar: true },
-    urbanizacao: { valor: 87.1, unidade: '%', ano: 2022, fonte: 'ibge-censo-2022', precisao: 'aproximada', verificar: true },
+    populacao: { valor: 203080756, unidade: 'hab.', ano: 2022, fonte: 'ibge-censo-2022', precisao: 'exata',
+      nota: 'Data de referência do Censo: 1º de agosto de 2022. Número já revisado pelo IBGE; '
+          + 'crescimento de 6,5% sobre o Censo de 2010.' },
+    densidade: { valor: 23.9, unidade: 'hab./km²', ano: 2022, fonte: 'ibge-censo-2022', precisao: 'aproximada',
+      nota: 'Derivada da população de 2022 sobre a área de 2026. A média nacional descreve mal qualquer '
+          + 'lugar real: a população se concentra numa faixa litorânea estreita.' },
+    urbanizacao: { valor: 87.4, unidade: '%', ano: 2022, fonte: 'ibge-censo-2022', precisao: 'exata',
+      nota: '177,5 milhões de pessoas em área urbana contra 25,6 milhões em área rural.' },
     idioma: { valor: 'Português', fonte: 'constituicao-1988', precisao: 'exata',
       nota: 'Art. 13: idioma oficial. O país reconhece ainda mais de 270 línguas indígenas e Libras.' },
   },
@@ -97,13 +120,21 @@ export const brasil: Pais = {
       nota: 'Sétima constituição do país; a primeira é de 1824.' },
     unidadesFederativas: { valor: 27, fonte: 'constituicao-1988', precisao: 'exata',
       nota: '26 estados e o Distrito Federal.' },
-    municipios: { valor: 5570, ano: 2022, fonte: 'ibge-area', precisao: 'exata', verificar: true },
-    eleitorado: { valor: 156454011, unidade: 'eleitores', ano: 2022, fonte: 'tse-2022', precisao: 'exata', verificar: true },
+    municipios: { valor: 5569, ano: 2026, fonte: 'ibge-area', precisao: 'exata',
+      nota: 'São 5.569 municípios juridicamente constituídos. A série estatística do IBGE costuma trazer '
+          + '5.571 porque conta também Brasília, cidade coextensiva ao Distrito Federal, e Fernando de '
+          + 'Noronha, distrito estadual de Pernambuco — nenhum dos dois é município em lei. Daí a '
+          + 'divergência entre fontes que citam 5.569, 5.570 ou 5.571.' },
+    eleitorado: { valor: 156454011, unidade: 'eleitores', ano: 2022, fonte: 'tse-2022', precisao: 'exata',
+      nota: 'Aptos a votar nas eleições gerais de 2022, distribuídos pelo país e por 181 localidades no '
+          + 'exterior. Alta de 6,21% sobre 2018.' },
   },
 
   economia: {
-    pib: { valor: 10.9, unidade: 'R$ tri', ano: 2023, fonte: 'ibge-pib', precisao: 'aproximada', verificar: true },
-    pibPerCapita: { valor: 50194, unidade: 'R$', ano: 2023, fonte: 'ibge-pib', precisao: 'aproximada', verificar: true },
+    pib: { valor: 10.9, unidade: 'R$ tri', ano: 2023, fonte: 'ibge-pib', precisao: 'aproximada',
+      nota: 'Dados definitivos das Contas Nacionais: crescimento de 3,2% em 2023, acima dos 2,9% da '
+          + 'estimativa preliminar.' },
+    pibPerCapita: { valor: 51693.92, unidade: 'R$', ano: 2023, fonte: 'ibge-pib', precisao: 'exata' },
     moeda: { valor: 'Real (BRL)', fonte: 'ibge-pib', precisao: 'exata' },
   },
 
@@ -175,13 +206,13 @@ export const territorios: Territorio[] = [
  */
 export const capitais: Capital[] = [
   {
-    nome: { valor: 'Salvador', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    nome: { valor: 'Salvador', fonte: 'ibge-500-anos', precisao: 'exata' },
     ponto: [-38.5108, -12.9777],
     vigencia: { de: 1549, ate: 1763, precisao: 'exata' },
     nota: 'Sede do governo-geral, primeiro aparato administrativo centralizado da colônia.',
   },
   {
-    nome: { valor: 'Rio de Janeiro', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    nome: { valor: 'Rio de Janeiro', fonte: 'ibge-500-anos', precisao: 'exata' },
     ponto: [-43.1729, -22.9068],
     vigencia: { de: 1763, ate: 1960, precisao: 'exata' },
     nota: 'A transferência acompanha o deslocamento do eixo econômico do açúcar nordestino para o ouro das Minas.',
@@ -199,47 +230,47 @@ export const capitalAtual = capitais[capitais.length - 1]!;
 
 export const marcos: Array<{ ano: Fato<number>; titulo: string; nota: string }> = [
   {
-    ano: { valor: 1500, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    ano: { valor: 1500, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata' },
     titulo: 'Chegada da frota de Cabral',
     nota: 'O litoral entra na cartografia europeia; a ocupação indígena do território é de pelo menos 12 mil anos antes.',
   },
   {
-    ano: { valor: 1549, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    ano: { valor: 1549, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata' },
     titulo: 'Governo-geral em Salvador',
     nota: 'Primeira capital e primeiro aparato administrativo centralizado da colônia.',
   },
   {
-    ano: { valor: 1763, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata', verificar: true },
+    ano: { valor: 1763, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata' },
     titulo: 'Capital transferida para o Rio de Janeiro',
     nota: 'Deslocamento do eixo econômico do açúcar nordestino para o ouro das Minas.',
   },
   {
-    ano: { valor: 1822, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
+    ano: { valor: 1822, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata' },
     titulo: 'Independência',
     nota: 'Ruptura sem fragmentação territorial — o oposto do que ocorreu na América espanhola.',
   },
   {
-    ano: { valor: 1888, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
+    ano: { valor: 1888, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata' },
     titulo: 'Abolição da escravidão',
     nota: 'Lei nº 3.353, de 13 de maio. Último país das Américas a abolir.',
   },
   {
-    ano: { valor: 1889, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
+    ano: { valor: 1889, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata' },
     titulo: 'Proclamação da República',
     nota: 'Fim do único império duradouro da América do Sul.',
   },
   {
-    ano: { valor: 1903, formato: 'ano', fonte: 'tratado-petropolis', precisao: 'exata', verificar: true },
+    ano: { valor: 1903, formato: 'ano', fonte: 'tratado-petropolis', precisao: 'exata' },
     titulo: 'Incorporação do Acre',
     nota: 'Última grande alteração do território brasileiro. A Bolívia cede o Acre pelo Tratado de Petrópolis.',
   },
   {
-    ano: { valor: 1960, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
+    ano: { valor: 1960, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata' },
     titulo: 'Inauguração de Brasília',
     nota: 'A capital move-se para o planalto central: decisão geopolítica de interiorização.',
   },
   {
-    ano: { valor: 1964, formato: 'ano', fonte: 'arquivo-nacional', precisao: 'exata', verificar: true },
+    ano: { valor: 1964, formato: 'ano', fonte: 'arquivo-nacional', precisao: 'exata' },
     titulo: 'Golpe militar',
     nota: 'Vinte e um anos de regime autoritário, encerrados em 1985.',
   },
@@ -254,8 +285,10 @@ export const marcos: Array<{ ano: Fato<number>; titulo: string; nota: string }> 
 export const trafico = {
   desembarcados: {
     valor: 4.9, unidade: 'milhões', fonte: 'slavevoyages',
-    precisao: 'estimada', verificar: true,
-    nota: 'Africanos escravizados desembarcados no Brasil entre 1561 e 1856; a maior cifra de qualquer destino nas Américas.',
+    precisao: 'estimada',
+    nota: 'Africanos escravizados desembarcados no Brasil, cerca de 39% de todo o tráfico transatlântico '
+        + 'e a maior cifra de qualquer destino nas Américas. As estimativas sérias variam de 4,8 a 5,5 '
+        + 'milhões, por isso o valor é declarado como estimado e não exato.',
   } satisfies Fato<number>,
 };
 

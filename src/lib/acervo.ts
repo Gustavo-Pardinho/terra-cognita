@@ -163,15 +163,28 @@ export function criarRegistro(dados: unknown): Registro {
    ========================================================================== */
 
 const NUM = new Intl.NumberFormat('pt-BR');
-const NUM1 = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
-const NUM2 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/**
+ * Casas decimais que o próprio valor carrega. O formatador não pode impor uma
+ * regra fixa: arredondar 8509360.85 para 8.509.360,9 descarta dígito
+ * significativo de um valor declarado como exato, o que contradiz a promessa de
+ * procedência. Teto de 3 casas, que é o que a fonte mais precisa aqui usa.
+ */
+function casas(valor: number): number {
+  const texto = String(valor);
+  const ponto = texto.indexOf('.');
+  return ponto === -1 ? 0 : Math.min(3, texto.length - ponto - 1);
+}
 
 export function formatar(valor: number | string, formato?: 'numero' | 'ano'): string {
   if (typeof valor === 'string') return valor;
   if (!Number.isFinite(valor)) return '—';
   if (formato === 'ano') return formatarAno(valor);
   if (Number.isInteger(valor)) return NUM.format(valor);
-  return Math.abs(valor) < 10 ? NUM2.format(valor) : NUM1.format(valor);
+  const d = casas(valor);
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: d, maximumFractionDigits: d,
+  }).format(valor);
 }
 
 /**
