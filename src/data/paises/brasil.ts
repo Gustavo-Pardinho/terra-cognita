@@ -132,6 +132,43 @@ export const brasil: Pais = {
  * Constituição de 1988 como fonte.
  */
 /**
+ * Territórios com data de incorporação — a primeira geometria datada do acervo.
+ *
+ * O Acre é o caso mais limpo que os dados sustentam: era boliviano, foi ocupado
+ * por seringueiros brasileiros e só passou ao Brasil pelo Tratado de Petrópolis,
+ * em 1903. O polígono vem do mesmo arquivo das unidades federativas, então a
+ * mudança de fronteira é derivada do acervo, não desenhada à mão.
+ *
+ * O mapa NÃO redesenha o contorno nacional antes de 1903. A fronteira
+ * Brasil-Bolívia daquela época era ela própria disputada — foi essa a causa do
+ * conflito —, e traçá-la com os dados de hoje fingiria uma precisão que a fonte
+ * não tem. Em vez disso o território aparece hachurado e rotulado como em
+ * disputa, que é o que a PR. 05 manda fazer.
+ */
+export interface Territorio {
+  slug: string;
+  nome: Fato<string>;
+  /** sigla da unidade federativa em public/dados/ufs.geojson */
+  uf: string;
+  vigencia: Vigencia;
+  cedidoPor: string;
+  nota: string;
+}
+
+export const territorios: Territorio[] = [
+  {
+    slug: 'acre',
+    nome: { valor: 'Acre', fonte: 'tratado-petropolis', precisao: 'exata' },
+    uf: 'AC',
+    vigencia: { de: 1903, precisao: 'exata' },
+    cedidoPor: 'Bolívia',
+    nota: 'Território boliviano ocupado por seringueiros brasileiros durante o ciclo da borracha. '
+        + 'A Bolívia cedeu-o pelo Tratado de Petrópolis mediante indenização de dois milhões de libras '
+        + 'e o compromisso de construir a ferrovia Madeira-Mamoré.',
+  },
+];
+
+/**
  * Sequência de capitais. É o dado que o controle de ano comanda no mapa: mover
  * o ano move o marcador, porque cada capital carrega a própria vigência.
  * A capital atual é derivada daqui — não há um campo `capital` duplicado no item.
@@ -192,6 +229,11 @@ export const marcos: Array<{ ano: Fato<number>; titulo: string; nota: string }> 
     nota: 'Fim do único império duradouro da América do Sul.',
   },
   {
+    ano: { valor: 1903, formato: 'ano', fonte: 'tratado-petropolis', precisao: 'exata', verificar: true },
+    titulo: 'Incorporação do Acre',
+    nota: 'Última grande alteração do território brasileiro. A Bolívia cede o Acre pelo Tratado de Petrópolis.',
+  },
+  {
     ano: { valor: 1960, formato: 'ano', fonte: 'planalto-leis', precisao: 'exata', verificar: true },
     titulo: 'Inauguração de Brasília',
     nota: 'A capital move-se para o planalto central: decisão geopolítica de interiorização.',
@@ -222,4 +264,4 @@ export const trafico = {
  * exibem — a prancha e o índice de regiões — e montá-lo duas vezes com entradas
  * diferentes fazia os números divergirem para o mesmo item.
  */
-export const registroBrasil = () => criarRegistro({ brasil, capitais, marcos, trafico });
+export const registroBrasil = () => criarRegistro({ brasil, capitais, territorios, marcos, trafico });

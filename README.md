@@ -120,6 +120,25 @@ por fórmula de destino geodésico em `src/lib/estado-mapa.ts`. Em Mercator eles
 a latitude; na ortográfica mudam de forma mas não de área. É a aula de distorção mais
 direta que um atlas pode dar.
 
+## Armadilhas já pagas
+
+Três que custaram tempo e vão voltar a morder quem mexer aqui:
+
+**Estilo escopado não alcança HTML inserido por `innerHTML`.** O Astro carimba um
+atributo de escopo nos elementos do template; elementos criados em tempo de execução não
+o recebem, então regras como `.inspetor dd` simplesmente não se aplicam. Use
+`:global()` nos seletores internos. Já aconteceu com os rótulos do mapa, com o corpo do
+inspetor e com as fichas da barra do tempo.
+
+**As regras do `public/_headers` são cumulativas, não exclusivas.** Uma regra `/*` com
+`Cache-Control` soma com a regra específica e produz dois `max-age` no mesmo cabeçalho; o
+cliente obedece o primeiro e o cache longo vira nada. Declare `Cache-Control` só em
+caminho específico.
+
+**`new URL()` percent-codifica as chaves do esquema de ladrilho.** `{z}/{x}/{y}` vira
+`%7Bz%7D/...` e o MapLibre passa a pedir um arquivo com esse nome literal — recebendo a
+página 404 em HTML, que ele engole sem reportar erro. Concatene a URL crua.
+
 ## Limites conhecidos
 
 - `ufs.geojson` tem 582 kB sem compressão. GeoJSON comprime muito bem; o host de

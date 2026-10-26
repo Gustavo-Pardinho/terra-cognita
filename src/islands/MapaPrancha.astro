@@ -51,6 +51,7 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
       <li><i class="linha" style="background:var(--agua)"></i> Hidrografia principal</li>
       <li><i class="ponto"></i> Capital federal</li>
       <li><i class="veu"></i> Fora do território</li>
+      <li><i class="disputa"></i> Em disputa no ano</li>
     </ul>
   </div>
 
@@ -104,6 +105,11 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
   .mapa__legenda li i { width: 16px; height: 10px; flex: none; }
   .mapa__legenda i.linha { height: 2px; }
   .mapa__legenda i.veu { background: var(--ground); opacity: .5; border: 1px solid var(--rule); }
+  .mapa__legenda i.disputa {
+    border: 1px solid var(--cert-disputada);
+    background: repeating-linear-gradient(45deg, var(--cert-disputada) 0 1px, transparent 1px 4px),
+                repeating-linear-gradient(-45deg, var(--cert-disputada) 0 1px, transparent 1px 4px);
+  }
   .mapa__legenda i.ponto { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--survey); background: var(--sheet); }
 
   /* --- inspetor: o que o acervo sabe sobre o que foi clicado ------------- */
@@ -154,13 +160,20 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
   }
   .tempo-barra input[type="range"] { flex: 1; min-width: 160px; accent-color: var(--brass); }
   .tempo-barra output { font-size: var(--t-sm); color: var(--ink); min-width: 4.5ch; text-align: right; }
-  .tempo-barra__estado { display: flex; gap: .3rem; flex-wrap: wrap; }
-  .tempo-barra__estado span {
+  /* As fichas entram por innerHTML e não recebem o atributo de escopo que o
+     Astro carimba no template — sem :global() nenhuma regra as alcança. Mesmo
+     motivo que já valeu para os rótulos do mapa e para o corpo do inspetor. */
+  .tempo-barra__estado {
+    display: flex; gap: .3rem; flex-wrap: wrap;
+    flex-basis: 100%;            /* linha própria: as fichas espremiam o controle */
+  }
+  .tempo-barra__estado :global(span) {
     font-family: var(--mono); font-size: .58rem; letter-spacing: .06em; text-transform: uppercase;
     border: 1px solid currentColor; padding: .1rem .3rem; color: var(--ink-3);
+    white-space: nowrap;
   }
-  .tempo-barra__estado span.vigente { color: var(--cert-exata); }
-  .tempo-barra__estado span.revogada { color: var(--cert-estimada); }
+  .tempo-barra__estado :global(span.vigente) { color: var(--cert-exata); }
+  .tempo-barra__estado :global(span.revogada) { color: var(--cert-estimada); }
 
   .mapa__pe {
     display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
@@ -198,7 +211,7 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
   import 'maplibre-gl/dist/maplibre-gl.css';
   import { lerEstado, escreverEstado, agrupar, indicatriz } from '../lib/estado-mapa';
 import { ANO_MAXIMO, TORDESILHAS, tordesilhas, vigenteEm, estadoDeVigencia } from '../lib/tempo';
-import { capitais } from '../data/paises/brasil';
+import { capitais, territorios } from '../data/paises/brasil';
 
   const campo = document.getElementById('campo');
   if (campo) iniciar(campo);
@@ -285,6 +298,18 @@ import { capitais } from '../data/paises/brasil';
         } },
       { id: 'brasil-linha', type: 'line', source: 'brasil',
         paint: { 'line-color': tok('--neat'), 'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1.2, 7, 2.4] } },
+      /* Território com data de incorporação. Antes dela aparece hachurado e com
+         limite próprio — o contorno nacional NÃO é redesenhado, porque a
+         fronteira daquela época era ela mesma disputada e traçá-la com os dados
+         de hoje fingiria precisão que a fonte não tem. Ver PR. 05. */
+      { id: 'territorio-disputa', type: 'fill', source: 'ufs',
+        filter: ['==', ['get', 'sigla'], 'AC'],
+        layout: { visibility: 'none' },
+        paint: { 'fill-pattern': 'hachura', 'fill-opacity': 0.85 } },
+      { id: 'territorio-limite', type: 'line', source: 'ufs',
+        filter: ['==', ['get', 'sigla'], 'AC'],
+        layout: { visibility: 'none' },
+        paint: { 'line-color': tok('--cert-disputada'), 'line-width': 1.6 } },
       /* Tordesilhas: a faixa é a incerteza do meridiano, não um enfeite. Ver
          src/lib/tempo.ts — o tratado não fixa uma linha única. */
       { id: 'tordesilhas-faixa', type: 'fill', source: 'tordesilhas',
@@ -333,6 +358,30 @@ import { capitais } from '../data/paises/brasil';
     campo.querySelector<HTMLElement>('.maplibregl-canvas')?.setAttribute('tabindex', '0');
     mapa.on('error', (e) => console.error('[mapa]', e.error?.message ?? e));
 
+    /* --- hachura cruzada para território em disputa -----------------------
+       `fill-pattern` exige uma imagem registrada, e não há servidor de sprite.
+       O padrão é desenhado num canvas e registrado direto no mapa. O passo
+       divide o lado do azulejo para a hachura emendar sem costura ao repetir. */
+    function criarHachura(cor: string, lado = 16, passo = 8): ImageData | null {
+      const c = document.createElement('canvas');
+      c.width = c.height = lado;
+      const ctx = c.getContext('2d');
+      if (!ctx) return null;
+      ctx.strokeStyle = cor;
+      ctx.lineWidth = 1.5;
+      for (let i = -lado; i <= lado * 2; i += passo) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + lado, lado); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i, lado); ctx.lineTo(i + lado, 0); ctx.stroke();
+      }
+      return ctx.getImageData(0, 0, lado, lado);
+    }
+
+    mapa.on('load', () => {
+      if (mapa.hasImage('hachura')) return;
+      const h = criarHachura(tok('--cert-disputada'));
+      if (h) mapa.addImage('hachura', h, { pixelRatio: 2 });
+    });
+
     /* --- repintura ao trocar de tema: o mapa segue os tokens --------------- */
     function repintar() {
       const def: Array<[string, string, string]> = [
@@ -349,6 +398,7 @@ import { capitais } from '../data/paises/brasil';
         ['tordesilhas-faixa', 'fill-color', '--cert-estimada'],
         ['tordesilhas-tracado', 'line-color', '--cert-estimada'],
         ['capital-ponto', 'circle-color', '--sheet'],
+        ['territorio-limite', 'line-color', '--cert-disputada'],
       ];
       for (const [camada, prop, token] of def) {
         if (mapa.getLayer(camada)) mapa.setPaintProperty(camada, prop as never, tok(token));
@@ -510,6 +560,20 @@ import { capitais } from '../data/paises/brasil';
 
       if (uf) {
         const p = uf.properties as Record<string, string>;
+        const terr = territorios.find((t) => t.uf === p.sigla && !vigenteEm(t.vigencia, ano));
+        if (terr) {
+          corpo.innerHTML = `
+            <h5>${terr.nome.valor}</h5>
+            <span class="sigla">território em disputa em ${ano}</span>
+            <dl>
+              <div><dt>Sob controle de</dt><dd>${terr.cedidoPor}</dd></div>
+              <div><dt>Passa ao Brasil em</dt><dd class="mono">${terr.vigencia.de}</dd></div>
+              <div><dt>Ponto clicado</dt><dd class="mono">${onde}</dd></div>
+            </dl>
+            <p class="lacuna">${terr.nota}</p>`;
+          inspetor.hidden = false;
+          return;
+        }
         corpo.innerHTML = `
           <h5>${p.nome ?? 'Unidade federativa'}</h5>
           <span class="sigla">${p.sigla ? `BR-${p.sigla}` : 'unidade federativa'}</span>
@@ -603,6 +667,15 @@ import { capitais } from '../data/paises/brasil';
         mapa.setPaintProperty('tordesilhas-tracado', 'line-opacity', tord === 'em vigor' ? 1 : 0.4);
       }
 
+      // território ainda não incorporado: hachurado e com limite próprio
+      const pendentes = territorios.filter((t) => !vigenteEm(t.vigencia, novo));
+      const mostrarDisputa = pendentes.length > 0;
+      for (const camada of ['territorio-disputa', 'territorio-limite']) {
+        if (mapa.getLayer(camada)) {
+          mapa.setLayoutProperty(camada, 'visibility', mostrarDisputa ? 'visible' : 'none');
+        }
+      }
+
       if (estadoTempo) {
         const fichas: string[] = [];
         fichas.push(capital
@@ -613,8 +686,13 @@ import { capitais } from '../data/paises/brasil';
             ? '<span class="vigente">Tordesilhas em vigor</span>'
             : '<span class="revogada">Tordesilhas revogada em 1750</span>');
         }
+        for (const t of pendentes) {
+          fichas.push(
+            `<span class="revogada">${t.nome.valor}: ${t.cedidoPor} até ${t.vigencia.de}</span>`,
+          );
+        }
         if (novo < ANO_MAXIMO) {
-          fichas.push('<span>fronteiras e cidades ainda são as de hoje</span>');
+          fichas.push('<span>demais fronteiras e cidades são as de hoje</span>');
         }
         estadoTempo.innerHTML = fichas.join('');
       }

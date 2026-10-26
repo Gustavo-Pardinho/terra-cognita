@@ -159,6 +159,15 @@ export const FONTES = {
     acessoEm: '2026-10-25',
     nota: 'Substitui Tordesilhas pelo princípio do uti possidetis: vale quem ocupa.',
   },
+  'tratado-petropolis': {
+    id: 'tratado-petropolis',
+    titulo: 'Tratado de Petrópolis, 17 de novembro de 1903',
+    autor: 'Brasil e Bolívia',
+    url: 'https://www.planalto.gov.br/ccivil_03/',
+    licenca: 'documento histórico, domínio público',
+    acessoEm: '2026-10-26',
+    nota: 'Encerra a disputa pelo Acre: o território passa ao Brasil mediante indenização e a construção da Madeira-Mamoré.',
+  },
   'david-rumsey': {
     id: 'david-rumsey',
     titulo: 'David Rumsey Map Collection',

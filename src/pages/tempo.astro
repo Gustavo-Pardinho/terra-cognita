@@ -9,7 +9,7 @@ import Base from '../layouts/Base.astro';
 import Prancha from '../components/Prancha.astro';
 import Dado from '../components/Dado.astro';
 import Fontes from '../components/Fontes.astro';
-import { capitais, marcos, registroBrasil } from '../data/paises/brasil';
+import { capitais, territorios, marcos, registroBrasil } from '../data/paises/brasil';
 import { ANO_MINIMO, ANO_MAXIMO, TORDESILHAS, posicaoNaFaixa } from '../lib/tempo';
 import { formatarVigencia } from '../lib/acervo';
 
@@ -25,6 +25,11 @@ const comVigencia = [
     vigencia: { de: TORDESILHAS.assinado, ate: TORDESILHAS.revogado },
     nota: 'Limite a 370 léguas a oeste de Cabo Verde. O meridiano exato é disputado — por isso o mapa desenha a faixa inteira.',
   },
+  ...territorios.map((t) => ({
+    rotulo: 'Território', termo: 'anterior', nome: `${t.nome.valor} (incorporado)`,
+    vigencia: t.vigencia,
+    nota: `Sob controle de ${t.cedidoPor} até ${t.vigencia.de}. ${t.nota}`,
+  })),
   {
     rotulo: 'Entidade política', termo: 'extinta', nome: 'República Federativa do Brasil',
     vigencia: { de: 1889 }, nota: 'Sucede o Império do Brasil.',
@@ -101,15 +106,18 @@ const eixo = marcos.map((m, i) => ({
       </div>
       <aside>
         <div class="nota">
-          <strong>O que ainda não varia no tempo.</strong> As fronteiras, os estados e os
-          nomes de cidade desenhados no mapa são os de hoje. Fronteira histórica exige
-          geometria datada, que o acervo ainda não tem — e desenhar a de hoje fingindo ser
-          a de 1650 seria o erro que este atlas existe para não cometer.
+          <strong>A primeira fronteira datada.</strong> O Acre era boliviano e só passou ao
+          Brasil em 1903, pelo Tratado de Petrópolis. Antes desse ano o mapa o desenha
+          hachurado e com limite próprio — mas <strong>não redesenha o contorno
+          nacional</strong>: a fronteira Brasil–Bolívia daquela época era ela mesma
+          disputada, e traçá-la com os dados de hoje fingiria uma precisão que a fonte não
+          tem. Mostrar a disputa como disputa é o que a regra manda.
         </div>
         <div class="nota" style="margin-top:var(--s-4)">
-          <strong>O que já varia.</strong> A capital em vigor, a vigência de Tordesilhas e
-          a da própria República. São poucos itens, mas o mecanismo é o definitivo: cada
-          um carrega a sua vigência, e nada no código sabe o que é uma capital.
+          <strong>O que ainda não varia.</strong> As demais fronteiras, os estados e os
+          nomes de cidade são os de hoje. Cada um exigiria a sua própria geometria datada;
+          o Acre entrou primeiro porque o polígono já estava no acervo e a data é
+          documentada em tratado.
         </div>
       </aside>
     </div>
