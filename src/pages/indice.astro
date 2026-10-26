@@ -1,0 +1,194 @@
+---
+/* =============================================================================
+   ÍNDICE DE LUGARES
+   O gazeteiro clássico de fim de atlas: todo nome, com coordenada, tipo e a
+   prancha onde aparece. Gerado dos mesmos arquivos que desenham o mapa, então
+   nenhum nome pode existir no índice sem existir na carta.
+   ========================================================================== */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import Base from '../layouts/Base.astro';
+import Prancha from '../components/Prancha.astro';
+import { formatarCoordenada } from '../lib/acervo';
+import { capitais, territorios } from '../data/paises/brasil';
+
+const ler = (arq: string) =>
+  JSON.parse(readFileSync(resolve(process.cwd(), 'public/dados', arq), 'utf8'));
+
+type Verbete = {
+  nome: string; tipo: string; onde: string;
+  coord?: [number, number]; prancha: string;
+};
+
+const entradas: Verbete[] = [];
+
+// --- unidades federativas ---------------------------------------------------
+for (const f of ler('ufs.geojson').features) {
+  const p = f.properties;
+  entradas.push({
+    nome: p.nome, tipo: 'unidade federativa',
+    onde: `${p.sigla} · Região ${p.regiao}`, prancha: '/regioes/brasil',
+  });
+}
+
+// --- cidades ----------------------------------------------------------------
+const vistos = new Set<string>();
+for (const f of ler('cidades.geojson').features) {
+  const p = f.properties;
+  const nome = p.nome === 'Brasilia' ? 'Brasília' : p.nome;
+  if (vistos.has(nome)) continue;            // o gazeteiro traz homônimos
+  vistos.add(nome);
+  entradas.push({
+    nome, tipo: 'cidade',
+    onde: p.uf ? `${p.uf}` : 'Brasil',
+    coord: f.geometry.coordinates as [number, number],
+    prancha: '/atlas',
+  });
+}
+
+// --- hidrografia ------------------------------------------------------------
+const rios = new Set<string>();
+for (const f of ler('hidrografia.geojson').features) {
+  const nome: string = f.properties.nome;
+  if (!nome || rios.has(nome)) continue;
+  rios.add(nome);
+  const cs = (f.geometry.type === 'LineString'
+    ? f.geometry.coordinates : f.geometry.coordinates.flat()) as [number, number][];
+  entradas.push({
+    nome, tipo: 'hidrografia', onde: 'América do Sul',
+    coord: cs[Math.floor(cs.length / 2)], prancha: '/atlas',
+  });
+}
+
+// --- itens do acervo com geometria própria ----------------------------------
+for (const c of capitais) {
+  entradas.push({
+    nome: c.nome.valor, tipo: 'capital histórica',
+    onde: c.vigencia.ate ? `${c.vigencia.de}–${c.vigencia.ate}` : `desde ${c.vigencia.de}`,
+    coord: c.ponto, prancha: '/tempo',
+  });
+}
+for (const t of territorios) {
+  entradas.push({
+    nome: t.nome.valor, tipo: 'território incorporado',
+    onde: `de ${t.cedidoPor} em ${t.vigencia.de}`, prancha: '/tempo',
+  });
+}
+
+// ordena pelo alfabeto português, ignorando acento na comparação
+entradas.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+const letra = (n: string) =>
+  n.normalize('NFD').replace(/[̀-ͯ]/g, '')[0]!.toUpperCase();
+const letras = [...new Set(entradas.map((e) => letra(e.nome)))].sort();
+const porTipo = [...new Set(entradas.map((e) => e.tipo))]
+  .map((t) => ({ tipo: t, n: entradas.filter((e) => e.tipo === t).length }));
+---
+<Base titulo="Índice de lugares" descricao="Gazeteiro do Terra Cognita: todo nome do atlas em ordem alfabética, com coordenada, tipo e a prancha onde aparece.">
+
+  <Prancha n={1} titulo="Índice de lugares" meta={`${entradas.length} verbetes · ${letras.length} letras`}>
+    <p class="abertura">
+      O gazeteiro é gerado dos mesmos arquivos que desenham o mapa. Nenhum nome pode
+      existir aqui sem existir na carta, e nenhum nome da carta fica de fora.
+    </p>
+
+    <div class="controle-indice">
+      <label for="busca">Filtrar</label>
+      <input type="search" id="busca" placeholder="nome, sigla ou tipo" autocomplete="off" />
+      <output id="achados" class="mono">{entradas.length}</output>
+    </div>
+
+    <nav class="alfabeto" aria-label="Saltar para a letra">
+      {letras.map((l) => <a href={`#letra-${l}`}>{l}</a>)}
+    </nav>
+
+    <div class="nota nota--alerta" style="margin:var(--s-5) 0">
+      <strong>Fidelidade dos topônimos.</strong> Alguns nomes de hidrografia chegam do
+      Natural Earth sem os diacríticos — «Braco Menor» no lugar de «Braço Menor». O índice
+      mostra o nome como a fonte o grava, porque corrigir à mão criaria uma segunda versão
+      do dado que divergiria da carta na primeira atualização do acervo. A correção certa
+      é no acervo, com nome alternativo registrado, e entra junto com a lente de verbetes.
+    </div>
+
+    <div class="legenda" style="margin:var(--s-5) 0">
+      <h4>Composição</h4>
+      <ul class="lista" style="font-size:.85rem">
+        {porTipo.map((t) => <li><b>{t.tipo}</b> <span>— {t.n}</span></li>)}
+      </ul>
+    </div>
+
+    {letras.map((l) => (
+      <section class="bloco" id={`letra-${l}`}>
+        <h3>{l}</h3>
+        <div class="rolagem">
+          <table>
+            <thead><tr><th>Nome</th><th>Tipo</th><th>Onde</th><th>Coordenada</th><th>Prancha</th></tr></thead>
+            <tbody>
+              {entradas.filter((e) => letra(e.nome) === l).map((e) => (
+                <tr data-busca={`${e.nome} ${e.tipo} ${e.onde}`.toLowerCase()}>
+                  <td><b>{e.nome}</b></td>
+                  <td class="fina">{e.tipo}</td>
+                  <td class="fina">{e.onde}</td>
+                  <td class="num">{e.coord ? formatarCoordenada(e.coord) : '—'}</td>
+                  <td><a href={e.prancha}>ver</a></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ))}
+  </Prancha>
+</Base>
+
+<style>
+  .controle-indice {
+    display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+    border: 1px solid var(--rule); background: var(--ground);
+    padding: var(--s-3) var(--s-4); margin: var(--s-5) 0 var(--s-4);
+  }
+  .controle-indice label {
+    font-family: var(--sans); font-size: var(--t-xs); font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .controle-indice input {
+    flex: 1; min-width: 14rem; font: inherit; font-size: var(--t-sm);
+    background: var(--sheet); color: var(--ink);
+    border: 1px solid var(--rule); padding: .4rem .6rem;
+  }
+  .controle-indice output { font-size: var(--t-sm); color: var(--ink-3); }
+
+  .alfabeto { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .alfabeto a {
+    font-family: var(--mono); font-size: var(--t-sm); text-decoration: none;
+    border: 1px solid var(--rule); padding: .1rem .45rem; color: var(--ink-2);
+  }
+  .alfabeto a:hover { border-color: var(--brass); color: var(--ink); }
+
+  .bloco { margin-top: var(--s-6); scroll-margin-top: 4.5rem; }
+  .bloco h3 { font-size: var(--t-lg) !important; letter-spacing: 0 !important; color: var(--brass) !important; }
+  .bloco[hidden] { display: none; }
+</style>
+
+<script>
+  const busca = document.getElementById('busca') as HTMLInputElement | null;
+  const achados = document.getElementById('achados');
+  const linhas = [...document.querySelectorAll<HTMLTableRowElement>('tbody tr[data-busca]')];
+
+  busca?.addEventListener('input', () => {
+    const q = busca.value.trim().toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '');
+    let n = 0;
+    for (const tr of linhas) {
+      const alvo = (tr.dataset.busca ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const bate = !q || alvo.includes(q);
+      tr.hidden = !bate;
+      if (bate) n += 1;
+    }
+    // esconde o bloco da letra que ficou sem nenhuma linha visível
+    for (const bloco of document.querySelectorAll<HTMLElement>('.bloco')) {
+      bloco.hidden = ![...bloco.querySelectorAll<HTMLTableRowElement>('tbody tr')].some((tr) => !tr.hidden);
+    }
+    if (achados) achados.textContent = String(n);
+  });
+</script>

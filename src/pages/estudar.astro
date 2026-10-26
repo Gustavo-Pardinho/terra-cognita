@@ -1,0 +1,320 @@
+---
+/* =============================================================================
+   ESTUDAR — o baralho
+   As cartas são geradas no build a partir do acervo e embarcadas na página. A
+   revisão roda no navegador, e o progresso fica só no navegador: o atlas não
+   quer guardar dado de ninguém.
+   ========================================================================== */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import Base from '../layouts/Base.astro';
+import Prancha from '../components/Prancha.astro';
+import { gerarCartas, resumoDoBaralho, type UF } from '../lib/cartas';
+import { ROTULO_TIPO, type TipoCarta } from '../lib/baralho';
+import { brasil } from '../data/paises/brasil';
+import { trilhas } from '../data/trilhas';
+
+const ufs: UF[] = JSON.parse(
+  readFileSync(resolve(process.cwd(), 'public/dados/ufs.geojson'), 'utf8'),
+).features.map((f: { properties: UF }) => f.properties);
+
+const cartas = gerarCartas(ufs, brasil.relacoes ?? []);
+const resumo = resumoDoBaralho(cartas);
+---
+<Base titulo="Estudar" descricao="Baralho de repetição espaçada do Terra Cognita, gerado a partir do acervo: siglas, macrorregiões, cronologia, capitais e países limítrofes.">
+
+  <Prancha n={1} titulo="Baralho" meta={`${cartas.length} cartas · ${resumo.length} tipos`}>
+    <div class="grade">
+      <div class="verbete">
+        <p class="abertura">
+          As cartas não foram escritas à mão: cada uma sai de um item que já está no
+          acervo. Corrigir uma prancha corrige o baralho, e uma carta nunca pode
+          discordar da prancha que a originou.
+        </p>
+
+        <div class="baralho" id="baralho" hidden>
+          <div class="baralho__barra">
+            <span class="baralho__contador mono" id="contador">—</span>
+            <span class="versalete" id="tipo-atual"></span>
+          </div>
+
+          <div class="carta" id="carta">
+            <p class="carta__frente" id="frente">—</p>
+            <div class="carta__verso" id="verso" hidden>
+              <p class="carta__resposta" id="resposta"></p>
+              <p class="fina" id="nota"></p>
+            </div>
+          </div>
+
+          <div class="baralho__acoes">
+            <button type="button" class="bt bt--virar" id="virar">Virar a carta</button>
+            <div class="baralho__notas" id="notas" hidden>
+              <button type="button" class="bt bt--errei"   data-r="errei">Errei</button>
+              <button type="button" class="bt bt--quase"   data-r="quase">Quase</button>
+              <button type="button" class="bt bt--acertei" data-r="acertei">Acertei</button>
+            </div>
+          </div>
+          <p class="fina baralho__atalhos">
+            Teclado: <span class="mono">espaço</span> vira a carta,
+            <span class="mono">1</span> errei, <span class="mono">2</span> quase,
+            <span class="mono">3</span> acertei.
+          </p>
+        </div>
+
+        <div class="vazio" id="vazio" hidden>
+          <h3>Nada vencido hoje</h3>
+          <p class="fina">
+            Todas as cartas já foram revisadas e as próximas revisões estão agendadas.
+            Voltar antes da hora não ajuda a fixar — o intervalo é o que faz a repetição
+            espaçada funcionar.
+          </p>
+          <button type="button" class="bt" id="forcar">Revisar mesmo assim</button>
+        </div>
+
+        <noscript>
+          <div class="nota nota--alerta">
+            O baralho precisa de JavaScript para funcionar, porque a revisão e o
+            agendamento acontecem no navegador. As pranchas e os verbetes do atlas
+            continuam legíveis sem ele.
+          </div>
+        </noscript>
+      </div>
+
+      <aside>
+        <div class="legenda">
+          <h4>De onde vêm as cartas</h4>
+          <ul class="lista" style="font-size:.85rem">
+            {resumo.map((x) => (
+              <li><b>{ROTULO_TIPO[x.tipo as TipoCarta]}</b> <span>— {x.n} cartas</span></li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="nota" style="margin-top:var(--s-4)">
+          <strong>O progresso fica só neste navegador.</strong> Não há conta de usuário e
+          não vai haver — o atlas não quer guardar dado de ninguém. O preço é que o
+          histórico não atravessa máquinas, e é justo você saber disso antes de estudar
+          cem cartas aqui.
+        </div>
+
+        <div class="nota" style="margin-top:var(--s-4)">
+          <strong>Três respostas, não seis notas.</strong> O algoritmo é o SM-2 reduzido.
+          A escala de seis notas do original pede uma autoavaliação fina que ninguém
+          consegue fazer com honestidade, e o ganho de precisão não paga o atrito.
+        </div>
+
+        <div class="legenda" style="margin-top:var(--s-4)">
+          <h4>Seu progresso</h4>
+          <dl class="ficha" id="placar">
+            <div><dt>Cartas vistas</dt><dd class="mono" id="p-vistas">0</dd></div>
+            <div><dt>Vencidas hoje</dt><dd class="mono" id="p-hoje">0</dd></div>
+            <div><dt>Acertos</dt><dd class="mono" id="p-acertos">0</dd></div>
+            <div><dt>Erros</dt><dd class="mono" id="p-erros">0</dd></div>
+          </dl>
+          <button type="button" class="bt bt--apagar" id="apagar">Apagar progresso</button>
+        </div>
+      </aside>
+    </div>
+  </Prancha>
+
+  <Prancha n={2} titulo="Trilhas" meta={`${trilhas.length} percurso · ${trilhas[0]!.etapas.length} etapas`}>
+    <p class="abertura">
+      Percursos curados, com uma pergunta por etapa. O destino de cada etapa é um
+      permalink completo — centro, zoom, camadas e ano —, então a trilha entrega você na
+      vista exata em que a pergunta faz sentido, em vez de pedir que você a reconstrua.
+    </p>
+
+    {trilhas.map((t) => (
+      <article class="trilha">
+        <h3>{t.titulo}</h3>
+        <p class="fina trilha__resumo">{t.resumo}</p>
+        <ol class="etapas">
+          {t.etapas.map((e, n) => (
+            <li>
+              <span class="etapas__n mono">{String(n + 1).padStart(2, '0')}</span>
+              <div>
+                <h4>{e.pergunta}</h4>
+                <p class="fina">{e.oQueVer}</p>
+                <a class="etapas__ir" href={e.onde}>Abrir a prancha desta etapa →</a>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </article>
+    ))}
+
+    <div class="nota" style="margin-top:var(--s-5)">
+      <strong>Uma trilha só, por enquanto.</strong> Cada etapa exige que a prancha de
+      destino já exista e que a pergunta se responda nela de fato — trilha que leva a uma
+      página vazia é pior que trilha nenhuma. As próximas entram conforme as pranchas
+      forem existindo.
+    </div>
+  </Prancha>
+
+  <script type="application/json" id="dados-cartas" set:html={JSON.stringify(cartas)}></script>
+</Base>
+
+<style>
+  .baralho { margin-top: var(--s-5); }
+  .baralho__barra {
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--rule); padding-bottom: var(--s-2);
+  }
+  .baralho__contador { font-size: var(--t-sm); color: var(--brass); }
+
+  .carta {
+    border: 1px solid var(--neat); background: var(--ground);
+    padding: var(--s-6) var(--s-5); margin-top: var(--s-4);
+    min-height: 11rem; display: flex; flex-direction: column; justify-content: center;
+  }
+  .carta__frente { font-size: var(--t-md); line-height: 1.4; max-width: 40ch; }
+  .carta__verso { margin-top: var(--s-5); padding-top: var(--s-4); border-top: 1px solid var(--rule-fine); }
+  .carta__resposta {
+    font-family: var(--serif); font-size: var(--t-xl);
+    letter-spacing: .02em; color: var(--brass);
+  }
+  .carta__verso .fina { margin-top: var(--s-2); max-width: 46ch; }
+
+  .baralho__acoes { margin-top: var(--s-4); }
+  .baralho__notas { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+  /* `display` declarado pelo autor vence o `[hidden] { display: none }` da folha
+     do navegador, e o atributo hidden deixa de esconder. Precisa ser explícito. */
+  .baralho__notas[hidden] { display: none; }
+  .baralho__atalhos { margin-top: var(--s-3); }
+
+  .bt {
+    font-family: var(--sans); font-size: var(--t-sm);
+    background: var(--sheet); color: var(--ink);
+    border: 1px solid var(--rule); padding: .5rem 1rem; cursor: pointer;
+  }
+  .bt:hover { border-color: var(--ink-3); }
+  .bt--virar { border-color: var(--brass); }
+  .bt--errei:hover   { border-color: var(--cert-disputada); color: var(--cert-disputada); }
+  .bt--quase:hover   { border-color: var(--cert-aproximada); color: var(--cert-aproximada); }
+  .bt--acertei:hover { border-color: var(--cert-exata); color: var(--cert-exata); }
+  .bt--apagar { margin-top: var(--s-3); font-size: var(--t-xs); color: var(--ink-3); }
+
+  .vazio { border: 1px solid var(--rule); background: var(--ground); padding: var(--s-5); margin-top: var(--s-5); }
+  .vazio h3 { border: 0; padding: 0; margin: 0 0 var(--s-2); }
+  .vazio .bt { margin-top: var(--s-4); }
+
+  .trilha { margin-top: var(--s-5); }
+  .trilha__resumo { max-width: min(var(--medida), 100%); margin-bottom: var(--s-4); }
+  .etapas { list-style: none; padding: 0; margin: 0; }
+  .etapas li {
+    display: grid; grid-template-columns: 2.5rem 1fr; gap: var(--s-4);
+    padding: var(--s-4) 0; border-top: 1px solid var(--rule-fine);
+  }
+  .etapas li:first-child { border-top: 1px solid var(--rule); }
+  .etapas__n { color: var(--brass); font-size: var(--t-sm); padding-top: .15rem; }
+  .etapas h4 { font-family: var(--sans); font-size: 1rem; margin: 0 0 var(--s-2); max-width: 46ch; }
+  .etapas .fina { max-width: min(var(--medida), 100%); }
+  .etapas__ir {
+    display: inline-block; margin-top: var(--s-3);
+    font-family: var(--sans); font-size: var(--t-sm);
+  }
+  @media (max-width: 560px) {
+    .etapas li { grid-template-columns: 1fr; gap: var(--s-1); }
+  }
+</style>
+
+<script>
+  import {
+    agendamentoInicial, reagendar, carregarProgresso, salvarProgresso,
+    filaDoDia, vencidaHoje, ROTULO_TIPO,
+    type Carta, type Resposta, type TipoCarta,
+  } from '../lib/baralho';
+
+  const bruto = document.getElementById('dados-cartas')?.textContent;
+  const cartas: Carta[] = bruto ? JSON.parse(bruto) : [];
+  if (cartas.length) iniciar(cartas);
+
+  function iniciar(cartas: Carta[]) {
+    const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+    const painel = el('baralho'), vazio = el('vazio');
+    const frente = el('frente'), verso = el('verso'), resposta = el('resposta'), nota = el('nota');
+    const contador = el('contador'), tipoAtual = el('tipo-atual');
+    const btVirar = el<HTMLButtonElement>('virar'), notas = el('notas');
+
+    let progresso = carregarProgresso();
+    let fila: Carta[] = [];
+    let i = 0;
+    let virada = false;
+
+    function placar() {
+      const vals = Object.values(progresso);
+      const set = (id: string, v: number) => { const n = el(id); if (n) n.textContent = String(v); };
+      set('p-vistas', vals.length);
+      set('p-hoje', cartas.filter((c) => vencidaHoje(progresso[c.id])).length);
+      set('p-acertos', vals.reduce((s, a) => s + a.acertos, 0));
+      set('p-erros', vals.reduce((s, a) => s + a.erros, 0));
+    }
+
+    function montarFila(forcar = false) {
+      fila = forcar
+        ? [...cartas].sort(() => Math.random() - 0.5).slice(0, 20)
+        : filaDoDia(cartas, progresso);
+      i = 0;
+      const temFila = fila.length > 0;
+      if (painel) painel.hidden = !temFila;
+      if (vazio) vazio.hidden = temFila;
+      if (temFila) mostrar();
+      placar();
+    }
+
+    function mostrar() {
+      const c = fila[i];
+      if (!c) { montarFila(); return; }
+      virada = false;
+      if (frente) frente.textContent = c.frente;
+      if (resposta) resposta.textContent = c.verso;
+      if (nota) { nota.textContent = c.nota ?? ''; nota.hidden = !c.nota; }
+      if (verso) verso.hidden = true;
+      if (notas) notas.hidden = true;
+      if (btVirar) btVirar.hidden = false;
+      if (contador) contador.textContent = `${i + 1} / ${fila.length}`;
+      if (tipoAtual) tipoAtual.textContent = ROTULO_TIPO[c.tipo as TipoCarta] ?? '';
+    }
+
+    function virar() {
+      if (virada) return;
+      virada = true;
+      if (verso) verso.hidden = false;
+      if (notas) notas.hidden = false;
+      if (btVirar) btVirar.hidden = true;
+    }
+
+    function responder(r: Resposta) {
+      if (!virada) return;                   // responder sem ver a resposta não mede nada
+      const c = fila[i];
+      if (!c) return;
+      progresso[c.id] = reagendar(progresso[c.id] ?? agendamentoInicial(), r);
+      salvarProgresso(progresso);
+      placar();                              // sem isto o placar fica zerado enquanto se estuda
+      i += 1;
+      if (i >= fila.length) montarFila(); else mostrar();
+    }
+
+    btVirar?.addEventListener('click', virar);
+    el('carta')?.addEventListener('click', virar);
+    notas?.querySelectorAll<HTMLButtonElement>('[data-r]').forEach((b) => {
+      b.addEventListener('click', () => responder(b.dataset.r as Resposta));
+    });
+    el('forcar')?.addEventListener('click', () => montarFila(true));
+    el('apagar')?.addEventListener('click', () => {
+      progresso = {};
+      salvarProgresso(progresso);
+      montarFila();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (painel?.hidden) return;
+      if (e.key === ' ') { e.preventDefault(); virar(); return; }
+      const mapa: Record<string, Resposta> = { '1': 'errei', '2': 'quase', '3': 'acertei' };
+      const r = mapa[e.key];
+      if (r) { e.preventDefault(); responder(r); }
+    });
+
+    montarFila();
+  }
+</script>
