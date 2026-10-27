@@ -221,6 +221,16 @@ não ter sitemap — por isso não fica fixo no código.
 ano nos ladrilhos e no bundle, revalidação obrigatória no HTML. `not_found_handling`
 serve a prancha de 404 do próprio atlas em vez do erro genérico.
 
+## Decisões, plano e armadilhas
+
+A pasta [`docs/`](docs/) guarda o que este README não cobre: o registro das decisões com o
+porquê de cada uma, o estado conferido, o plano até o fim do projeto e as armadilhas
+técnicas que custaram tempo. Comece por [`docs/LEIA-PRIMEIRO.md`](docs/LEIA-PRIMEIRO.md).
+
+Existe porque o código se relê e o raciocínio não: por que a Bolívia foi a segunda prancha
+e não a Argentina, por que o PMTiles foi descartado, por que o CompartilhaIgual não foi
+escolha estética. Nada disso se recupera lendo os arquivos-fonte.
+
 ## Licença
 
 - **Código** (`src/`, `scripts/`, configuração): [MIT](LICENSE)
