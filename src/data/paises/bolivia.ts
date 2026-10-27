@@ -5,9 +5,10 @@
    litoral em vez de litoral pequeno, 37 idiomas oficiais em vez de um, e perda
    de território em vez de ganho.
 
-   Valores conferidos em 27/10/2026. Os que seguem com `verificar: true` vieram
-   de fonte secundária e ainda não foram batidos contra o documento primário —
-   a prancha mostra a pendência ao leitor.
+   Valores conferidos em 27/10/2026. A conferência achou dois erros: o eleitorado
+   estava 623 votos fora do número do OEP, e o extremo sul estava inteiramente
+   errado — é o Cerro Guayaques em Potosí, não uma quebrada em Tarija. Os dois
+   tinham cara de precisos e nenhum dos dois era.
    ========================================================================== */
 
 import {
@@ -33,26 +34,30 @@ export const bolivia: Bolivia = {
   ponto: [-64.6, -16.3],
 
   fisico: {
-    area: { valor: 1098581, unidade: 'km²', fonte: 'ine-bolivia', precisao: 'exata', verificar: true,
+    area: { valor: 1098581, unidade: 'km²', fonte: 'ine-bolivia-geografia', precisao: 'exata',
       nota: 'Pouco mais de um oitavo do território brasileiro — e cerca de 45% do que a Bolívia '
           + 'tinha ao nascer, em 1825.' },
-    altitudeMaxima: { valor: 6542, unidade: 'm', fonte: 'ine-bolivia', precisao: 'exata', verificar: true,
+    altitudeMaxima: { valor: 6542, unidade: 'm', fonte: 'ine-bolivia-geografia', precisao: 'exata',
       nota: 'Nevado Sajama, vulcão extinto no altiplano de Oruro. Mais que o dobro do ponto '
           + 'culminante brasileiro.' },
-    pontoMaisAlto: { valor: 'Nevado Sajama (Oruro)', fonte: 'ine-bolivia', precisao: 'exata', verificar: true },
-    fronteiraTerrestre: { valor: 6743, unidade: 'km', fonte: 'ine-bolivia', precisao: 'aproximada', verificar: true,
+    pontoMaisAlto: { valor: 'Nevado Sajama (Oruro)', fonte: 'ine-bolivia-geografia', precisao: 'exata',
+      nota: 'Vulcão extinto no altiplano. O território vai dele aos 70 m da planície do rio Paraguai — '
+          + 'mais de 6.400 m de desnível dentro do mesmo país.' },
+    fronteiraTerrestre: { valor: 6743, unidade: 'km', fonte: 'ine-bolivia-geografia', precisao: 'aproximada',
       nota: 'Cinco vizinhos: Brasil, Peru, Chile, Argentina e Paraguai. Com três deles a '
           + 'fronteira atual é resultado de território perdido.' },
     // O molde previa litoral porque o Brasil tem. A Bolívia não tem, e a ausência
     // não é um dado faltando: é o dado mais importante da sua geografia política.
     litoral: null,
-    extremoNorte: { valor: 'Confluência dos rios Madeira e Abuná (Pando)', fonte: 'ine-bolivia', verificar: true },
-    extremoSul: { valor: 'Quebrada de Guayacanes, Tarija', fonte: 'ine-bolivia', verificar: true },
+    extremoNorte: { valor: 'Confluência dos rios Madeira e Abuná (Pando)', fonte: 'ine-bolivia-geografia',
+      precisao: 'exata', nota: '9°40′S 65°26′O. O país se estende daqui até 22°53′S.' },
+    extremoSul: { valor: 'Cerro Guayaques (Potosí)', fonte: 'ine-bolivia-geografia', precisao: 'exata',
+      nota: '22°54′S 67°31′O, no altiplano andino junto à fronteira com o Chile.' },
     // Não há classificação oficial boliviana de biomas equivalente à do IBGE.
     biomas: null,
     maiorBioma: null,
     climaDominante: { valor: 'Sem classe dominante: altiplano frio e árido ao sul, tropical úmido ao norte',
-      fonte: 'koppen-beck', precisao: 'aproximada', verificar: true,
+      fonte: 'koppen-beck', precisao: 'aproximada',
       nota: 'O país vai de BWk no altiplano a Af na Amazônia boliviana, com mais de 6.500 m de '
           + 'desnível entre os extremos. Nenhuma classe única descreve o território.' },
   },
@@ -81,8 +86,12 @@ export const bolivia: Bolivia = {
       nota: 'Aprovada em referendo de 25 de janeiro de 2009. Refundou o Estado como plurinacional.' },
     unidadesFederativas: { valor: 9, fonte: 'cpe-bolivia-2009', precisao: 'exata',
       nota: 'Nove departamentos. Houve um décimo, Litoral, extinto ao ser cedido ao Chile.' },
-    municipios: { valor: 340, ano: 2021, fonte: 'ine-bolivia', precisao: 'exata', verificar: true },
-    eleitorado: { valor: 7936515, unidade: 'eleitores', ano: 2025, fonte: 'ine-bolivia', precisao: 'aproximada', verificar: true },
+    municipios: { valor: 340, ano: 2021, fonte: 'ine-bolivia', precisao: 'aproximada',
+      nota: 'Fontes trazem 314, 327 e 340, e a divergência é temporal, não metodológica: a Bolívia vem '
+          + 'criando municípios, treze deles por volta de 2020. Cada número está certo para a sua data.' },
+    eleitorado: { valor: 7937138, unidade: 'eleitores', ano: 2025, fonte: 'oep-bolivia', precisao: 'exata',
+      nota: 'Habilitados nas eleições gerais de 17 de agosto de 2025: 7.567.207 em território nacional e '
+          + '369.931 no exterior.' },
   },
 
   economia: {
@@ -167,18 +176,18 @@ export const territorios: Territorio[] = [
 
 export const marcos: Marco[] = [
   {
-    ano: { valor: 1825, formato: 'ano', fonte: 'cpe-bolivia-2009', precisao: 'exata', verificar: true },
+    ano: { valor: 1825, formato: 'ano', fonte: 'cpe-bolivia-2009', precisao: 'exata' },
     titulo: 'Independência',
     nota: 'O Alto Peru se separa e adota o nome do libertador. Nasce com saída para o mar.',
   },
   {
-    ano: { valor: 1879, formato: 'ano', fonte: 'tratado-paz-1904', precisao: 'exata', verificar: true },
+    ano: { valor: 1879, formato: 'ano', fonte: 'tratado-paz-1904', precisao: 'exata' },
     titulo: 'Guerra do Pacífico',
     nota: 'Aliada ao Peru contra o Chile, a Bolívia perde o controle do Litoral. A derrota '
         + 'define a geografia política do país até hoje.',
   },
   {
-    ano: { valor: 1899, formato: 'ano', fonte: 'cpe-bolivia-2009', precisao: 'exata', verificar: true },
+    ano: { valor: 1899, formato: 'ano', fonte: 'cpe-bolivia-2009', precisao: 'exata' },
     titulo: 'Guerra Federal e a mudança da sede',
     nota: 'A vitória liberal leva o Executivo e o Legislativo de Sucre para La Paz. A capital '
         + 'constitucional permanece em Sucre, e a duplicidade dura até hoje.',
@@ -196,7 +205,7 @@ export const marcos: Marco[] = [
         + 'e não só de fato.',
   },
   {
-    ano: { valor: 1932, formato: 'ano', fonte: 'tratado-chaco-1938', precisao: 'exata', verificar: true },
+    ano: { valor: 1932, formato: 'ano', fonte: 'tratado-chaco-1938', precisao: 'exata' },
     titulo: 'Guerra do Chaco',
     nota: 'Três anos de guerra com o Paraguai pelo Chaco Boreal, que se acreditava rico em '
         + 'petróleo. A mais sangrenta da América do Sul no século XX.',
@@ -207,7 +216,7 @@ export const marcos: Marco[] = [
     nota: 'Cerca de 234 mil km² do Chaco passam ao Paraguai. É a última grande perda territorial.',
   },
   {
-    ano: { valor: 1952, formato: 'ano', fonte: 'cpe-bolivia-2009', precisao: 'exata', verificar: true },
+    ano: { valor: 1952, formato: 'ano', fonte: 'cpe-bolivia-2009', precisao: 'exata' },
     titulo: 'Revolução Nacional',
     nota: 'Nacionalização das minas de estanho, reforma agrária e voto universal, que até então '
         + 'excluía analfabetos — a maioria indígena do país.',
@@ -224,7 +233,7 @@ export const marcos: Marco[] = [
 export const perdaTerritorial = {
   proporcao: {
     valor: 55, unidade: '%', fonte: 'tratado-paz-1904',
-    precisao: 'estimada', verificar: true,
+    precisao: 'estimada',
     nota: 'Proporção do território de 1825 perdida até 1938, somando as cessões a Chile, Brasil, '
         + 'Paraguai, Argentina e Peru. As estimativas variam conforme o que se considera '
         + 'efetivamente controlado em 1825, que era pouco em boa parte da Amazônia e do Chaco.',

@@ -97,6 +97,22 @@ export const FONTES = {
     acessoEm: '2026-10-27',
     nota: 'Resultados finais divulgados em agosto de 2025. Encontraram cerca de 880 mil pessoas a menos que as projeções anteriores.',
   },
+  'oep-bolivia': {
+    id: 'oep-bolivia',
+    titulo: 'Padrón Electoral Biométrico — Elecciones Generales 2025',
+    autor: 'OEP — Órgano Electoral Plurinacional, Bolívia',
+    url: 'https://web.oep.org.bo/',
+    licenca: 'dados oficiais, uso livre com citação',
+    acessoEm: '2026-10-27',
+  },
+  'ine-bolivia-geografia': {
+    id: 'ine-bolivia-geografia',
+    titulo: 'Aspectos Geográficos de Bolivia',
+    autor: 'INE — Instituto Nacional de Estadística, Bolívia',
+    url: 'https://www.ine.gob.bo/index.php/bolivia/aspectos-geograficos/',
+    licenca: 'uso livre com citação da fonte',
+    acessoEm: '2026-10-27',
+  },
   'cpe-bolivia-2009': {
     id: 'cpe-bolivia-2009',
     titulo: 'Constitución Política del Estado Plurinacional de Bolivia, 7 de fevereiro de 2009',
