@@ -1,13 +1,15 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Prancha from '../../components/Prancha.astro';
-import { registroBrasil } from '../../data/paises/brasil';
+import { PRANCHAS } from '../../data/paises';
 
-const r = registroBrasil();
-const prontas = [{
-  slug: 'brasil', nome: 'Brasil', regiao: 'América do Sul',
-  fatos: r.total(), fontes: r.fontes().length, pendentes: r.pendencias().length,
-}];
+const prontas = PRANCHAS.map((p) => {
+  const r = p.registro();
+  return {
+    slug: p.slug, nome: p.nome, regiao: p.regiao, sintese: p.prosa.sintese,
+    fatos: r.total(), fontes: r.fontes().length, pendentes: r.pendencias().length,
+  };
+});
 
 /** A hierarquia da PR. 03. O que não existe aparece como lacuna declarada. */
 const arvore = [
@@ -20,7 +22,7 @@ const arvore = [
 ];
 ---
 <Base titulo="Regiões" descricao="Índice das pranchas de região do Terra Cognita: continente, sub-região, país e unidade subnacional.">
-  <Prancha n={1} titulo="Regiões" meta={`${prontas.length} prancha pronta`}>
+  <Prancha n={1} titulo="Regiões" meta={`${prontas.length} ${prontas.length === 1 ? 'prancha pronta' : 'pranchas prontas'}`}>
     <p class="abertura">
       A hierarquia vai de continente a cidade. Uma prancha excelente antes de duzentas
       medianas — por isso o índice abaixo mostra o que existe e declara o que falta,
@@ -35,6 +37,7 @@ const arvore = [
             <span class="pranchas__nome">{p.nome}</span>
             <span class="pranchas__meta mono">{p.fatos} fatos · {p.fontes} fontes · {p.pendentes} a conferir</span>
             <span class="pranchas__onde">{p.regiao}</span>
+            <span class="pranchas__sintese fina">{p.sintese}</span>
           </a>
         </li>
       ))}
@@ -47,8 +50,10 @@ const arvore = [
           <h4>{c.nome}</h4>
           <ul>
             {c.filhos.map((f) => (
-              <li class={f === 'Brasil' ? 'pronto' : undefined}>
-                {f === 'Brasil' ? <a href="/regioes/brasil">{f}</a> : f}
+              <li class={prontas.some((p) => p.nome === f) ? 'pronto' : undefined}>
+                {prontas.some((p) => p.nome === f)
+                  ? <a href={`/regioes/${prontas.find((p) => p.nome === f)!.slug}`}>{f}</a>
+                  : f}
               </li>
             ))}
           </ul>
@@ -74,6 +79,8 @@ const arvore = [
   .pranchas__nome { font-family: var(--serif); font-size: 1.3rem; text-transform: uppercase; letter-spacing: .05em; }
   .pranchas__meta { font-size: var(--t-xs); color: var(--ink-3); text-align: right; }
   .pranchas__onde { font-family: var(--sans); font-size: var(--t-xs); color: var(--ink-2); grid-column: 1; }
+  .pranchas__sintese { grid-column: 1 / -1; margin-top: var(--s-2); max-width: 70ch; }
+  .pranchas li + li { margin-top: var(--s-3); }
 
   .tronco { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule);
     grid-template-columns: 1fr; }

@@ -8,11 +8,34 @@
    os ladrilhos são PNG assados em build, e os rótulos são marcadores HTML,
    para usar a hierarquia tipográfica real do atlas. Ver PR. 02 e PR. 04.
    ========================================================================== */
-interface Props { altura?: string }
-const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
+import type { Capital, Territorio } from '../lib/acervo';
+
+interface Props {
+  altura?: string;
+  /** slug do país em foco; o resto do continente fica sob véu */
+  pais?: string;
+  /** centro e zoom iniciais, quando o permalink não traz os seus */
+  centro?: [number, number];
+  zoom?: number;
+  /** itens do acervo que o ano comanda. A ilha não importa dados de país
+      nenhum: recebe o que precisa desenhar e não sabe de qual prancha veio. */
+  capitais?: Capital[];
+  territorios?: Territorio[];
+}
+const {
+  altura = 'clamp(380px, 62vh, 680px)',
+  pais = 'brasil',
+  centro = [-52.5, -14.5],
+  zoom = 3.3,
+  capitais = [],
+  territorios = [],
+} = Astro.props;
+
+const doTempo = JSON.stringify({ capitais, territorios });
 ---
 <figure class="mapa" style={`--altura-mapa:${altura}`}>
-  <div class="mapa__campo" id="campo" role="application"
+  <div class="mapa__campo" id="campo" data-pais={pais}
+       data-centro={JSON.stringify(centro)} data-zoom={String(zoom)} role="application"
        aria-label="Mapa físico-político do Brasil: relevo hipsométrico sombreado, limites estaduais, hidrografia principal e cidades. Use as setas para deslocar e +/− para aproximar. Clique num estado para abrir o inspetor."></div>
 
   <div class="mapa__controles">
@@ -61,6 +84,8 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
     <output id="ano-valor" class="mono">2026</output>
     <div class="tempo-barra__estado" id="tempo-estado"></div>
   </div>
+
+  <script type="application/json" id="dados-tempo" set:html={doTempo}></script>
 
   <figcaption class="mapa__pe">
     <span class="escala"><span class="escala__barras"><i></i><i></i><i></i><i></i></span><span id="escala-txt">—</span></span>
@@ -211,7 +236,7 @@ const { altura = 'clamp(380px, 62vh, 680px)' } = Astro.props;
   import 'maplibre-gl/dist/maplibre-gl.css';
   import { lerEstado, escreverEstado, agrupar, indicatriz } from '../lib/estado-mapa';
 import { ANO_MAXIMO, TORDESILHAS, tordesilhas, vigenteEm, estadoDeVigencia } from '../lib/tempo';
-import { capitais, territorios } from '../data/paises/brasil';
+import type { Capital, Territorio } from '../lib/acervo';
 
   const campo = document.getElementById('campo');
   if (campo) iniciar(campo);
@@ -219,6 +244,36 @@ import { capitais, territorios } from '../data/paises/brasil';
   async function iniciar(campo: HTMLElement) {
     const css = () => getComputedStyle(document.documentElement);
     const tok = (n: string) => css().getPropertyValue(n).trim();
+
+    const pais = campo.dataset.pais ?? 'brasil';
+    const centroInicial = JSON.parse(campo.dataset.centro ?? '[-52.5,-14.5]') as [number, number];
+    const zoomInicial = Number(campo.dataset.zoom ?? '3.3');
+
+    const bruto = document.getElementById('dados-tempo')?.textContent;
+    const { capitais, territorios } = (bruto ? JSON.parse(bruto) : { capitais: [], territorios: [] }) as {
+      capitais: Capital[]; territorios: Territorio[];
+    };
+    /* Território datado nem sempre está no arquivo do próprio país: o Acre está
+       no do Brasil e o Litoral boliviano está no do Chile. A geometria é buscada
+       no arquivo de `origem` de cada um e remontada numa fonte só. */
+    async function montarTerritorios() {
+      if (!territorios.length) return;
+      const origens = [...new Set(territorios.map((t) => t.origem))];
+      const arquivos = await Promise.all(
+        origens.map((o) => fetch(`/dados/${o}-subdivisoes.geojson`).then((r) => r.json()).catch(() => null)),
+      );
+      const porOrigem = new Map(origens.map((o, i) => [o, arquivos[i]]));
+
+      const feicoes: GeoJSON.Feature[] = [];
+      for (const t of territorios) {
+        const arq = porOrigem.get(t.origem);
+        const f = arq?.features.find((x: GeoJSON.Feature) => x.properties?.sigla === t.uf);
+        if (!f) { console.warn(`[mapa] geometria ausente: ${t.slug} (${t.uf} em ${t.origem})`); continue; }
+        feicoes.push({ ...f, properties: { ...f.properties, territorio: t.slug } });
+      }
+      (mapa.getSource('territorios') as maplibregl.GeoJSONSource | undefined)
+        ?.setData({ type: 'FeatureCollection', features: feicoes });
+    }
 
     const PADRAO = new Set(['relevo', 'ufs', 'hidrografia', 'graticulado', 'rotulos']);
     const inicial = lerEstado();
@@ -230,14 +285,14 @@ import { capitais, territorios } from '../data/paises/brasil';
     const rel = await fetch('/dados/relevo.json').then((r) => r.json()).catch(() => null);
 
     const fontes: Record<string, maplibregl.SourceSpecification> = {
-      vizinhos:    { type: 'geojson', data: '/dados/vizinhos.geojson' },
-      brasil:      { type: 'geojson', data: '/dados/brasil.geojson' },
-      ufs:         { type: 'geojson', data: '/dados/ufs.geojson' },
+      paises:      { type: 'geojson', data: '/dados/paises.geojson' },
+      subdivisoes: { type: 'geojson', data: `/dados/${pais}-subdivisoes.geojson` },
       hidrografia: { type: 'geojson', data: '/dados/hidrografia.geojson' },
       graticulado: { type: 'geojson', data: '/dados/graticulado.geojson' },
       tissot:      { type: 'geojson', data: indicatriz(500) as never },
       tordesilhas: { type: 'geojson', data: tordesilhas() as never },
       capital:     { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as never },
+      territorios: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as never },
     };
     if (rel) {
       fontes.relevo = {
@@ -261,9 +316,11 @@ import { capitais, territorios } from '../data/paises/brasil';
          escondida; serve para dois casos em que o relevo não cobre a tela:
          quando o leitor desliga a camada, e quando sai da extensão assada.
          Sem ela a terra fica da cor do oceano e a prancha se desfaz. */
-      { id: 'terra-vizinhos', type: 'fill', source: 'vizinhos',
+      { id: 'terra-vizinhos', type: 'fill', source: 'paises',
+        filter: ['!=', ['get', 'slug'], pais],
         paint: { 'fill-color': tok('--sunk') } },
-      { id: 'terra-brasil', type: 'fill', source: 'brasil',
+      { id: 'terra-foco', type: 'fill', source: 'paises',
+        filter: ['==', ['get', 'slug'], pais],
         paint: { 'fill-color': tok('--tinta-1') } },
     ];
     if (rel) camadas.push({
@@ -274,16 +331,18 @@ import { capitais, territorios } from '../data/paises/brasil';
     camadas.push(
       // véu sobre os vizinhos: convenção de atlas para destacar o país em foco
       // o véu acompanha o relevo: sem relevo, a base política já distingue os vizinhos
-      { id: 'veu-vizinhos', type: 'fill', source: 'vizinhos',
+      { id: 'veu-vizinhos', type: 'fill', source: 'paises',
+        filter: ['!=', ['get', 'slug'], pais],
         layout: { visibility: vis('relevo') },
         paint: { 'fill-color': tok('--ground'), 'fill-opacity': 0.5 } },
       // alvos invisíveis de clique: linha é difícil de acertar com o ponteiro
-      { id: 'ufs-alvo', type: 'fill', source: 'ufs', paint: { 'fill-opacity': 0 } },
-      { id: 'vizinhos-alvo', type: 'fill', source: 'vizinhos', paint: { 'fill-opacity': 0 } },
+      { id: 'ufs-alvo', type: 'fill', source: 'subdivisoes', paint: { 'fill-opacity': 0 } },
+      { id: 'vizinhos-alvo', type: 'fill', source: 'paises',
+        filter: ['!=', ['get', 'slug'], pais], paint: { 'fill-opacity': 0 } },
       { id: 'graticulado', type: 'line', source: 'graticulado',
         layout: { visibility: vis('graticulado') },
         paint: { 'line-color': tok('--ink'), 'line-width': 0.5, 'line-opacity': 0.18 } },
-      { id: 'ufs-linha', type: 'line', source: 'ufs',
+      { id: 'ufs-linha', type: 'line', source: 'subdivisoes',
         layout: { visibility: vis('ufs') },
         paint: {
           'line-color': tok('--neat'), 'line-opacity': 0.5,
@@ -296,18 +355,17 @@ import { capitais, territorios } from '../data/paises/brasil';
           'line-color': tok('--agua'), 'line-opacity': 0.9,
           'line-width': ['interpolate', ['linear'], ['zoom'], 2, 0.5, 6, 2.4],
         } },
-      { id: 'brasil-linha', type: 'line', source: 'brasil',
+      { id: 'foco-linha', type: 'line', source: 'paises',
+        filter: ['==', ['get', 'slug'], pais],
         paint: { 'line-color': tok('--neat'), 'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1.2, 7, 2.4] } },
       /* Território com data de incorporação. Antes dela aparece hachurado e com
          limite próprio — o contorno nacional NÃO é redesenhado, porque a
          fronteira daquela época era ela mesma disputada e traçá-la com os dados
          de hoje fingiria precisão que a fonte não tem. Ver PR. 05. */
-      { id: 'territorio-disputa', type: 'fill', source: 'ufs',
-        filter: ['==', ['get', 'sigla'], 'AC'],
+      { id: 'territorio-disputa', type: 'fill', source: 'territorios',
         layout: { visibility: 'none' },
         paint: { 'fill-pattern': 'hachura', 'fill-opacity': 0.85 } },
-      { id: 'territorio-limite', type: 'line', source: 'ufs',
-        filter: ['==', ['get', 'sigla'], 'AC'],
+      { id: 'territorio-limite', type: 'line', source: 'territorios',
         layout: { visibility: 'none' },
         paint: { 'line-color': tok('--cert-disputada'), 'line-width': 1.6 } },
       /* Tordesilhas: a faixa é a incerteza do meridiano, não um enfeite. Ver
@@ -339,8 +397,8 @@ import { capitais, territorios } from '../data/paises/brasil';
 
     const mapa = new maplibregl.Map({
       container: campo,
-      center: [inicial.lon ?? -52.5, inicial.lat ?? -14.5],
-      zoom: inicial.z ?? 3.3,
+      center: [inicial.lon ?? centroInicial[0], inicial.lat ?? centroInicial[1]],
+      zoom: inicial.z ?? zoomInicial,
       minZoom: 2,
       maxZoom: 8,                     // o DEM assado vai até z7; não blefa além disso
       attributionControl: { customAttribution: 'Natural Earth · domínio público' },
@@ -377,9 +435,11 @@ import { capitais, territorios } from '../data/paises/brasil';
     }
 
     mapa.on('load', () => {
-      if (mapa.hasImage('hachura')) return;
-      const h = criarHachura(tok('--cert-disputada'));
-      if (h) mapa.addImage('hachura', h, { pixelRatio: 2 });
+      if (!mapa.hasImage('hachura')) {
+        const h = criarHachura(tok('--cert-disputada'));
+        if (h) mapa.addImage('hachura', h, { pixelRatio: 2 });
+      }
+      void montarTerritorios();
     });
 
     /* --- repintura ao trocar de tema: o mapa segue os tokens --------------- */
@@ -392,7 +452,7 @@ import { capitais, territorios } from '../data/paises/brasil';
         ['graticulado', 'line-color', '--ink'],
         ['ufs-linha', 'line-color', '--neat'],
         ['hidrografia-linha', 'line-color', '--agua'],
-        ['brasil-linha', 'line-color', '--neat'],
+        ['foco-linha', 'line-color', '--neat'],
         ['tissot-area', 'fill-color', '--survey'],
         ['tissot-linha', 'line-color', '--survey'],
         ['tordesilhas-faixa', 'fill-color', '--cert-estimada'],
@@ -479,9 +539,9 @@ import { capitais, territorios } from '../data/paises/brasil';
     (async () => {
       try {
         const [cidades, hidro, ufs] = await Promise.all([
-          fetch('/dados/cidades.geojson').then((r) => r.json()),
+          fetch(`/dados/${pais}-cidades.geojson`).then((r) => r.json()),
           fetch('/dados/hidrografia.geojson').then((r) => r.json()),
-          fetch('/dados/ufs.geojson').then((r) => r.json()),
+          fetch(`/dados/${pais}-subdivisoes.geojson`).then((r) => r.json()),
         ]);
 
         for (const f of ufs.features) {
@@ -564,10 +624,11 @@ import { capitais, territorios } from '../data/paises/brasil';
         if (terr) {
           corpo.innerHTML = `
             <h5>${terr.nome.valor}</h5>
-            <span class="sigla">território em disputa em ${ano}</span>
+            <span class="sigla">fora do território em ${ano}</span>
             <dl>
-              <div><dt>Sob controle de</dt><dd>${terr.cedidoPor}</dd></div>
-              <div><dt>Passa ao Brasil em</dt><dd class="mono">${terr.vigencia.de}</dd></div>
+              <div><dt>${terr.sentido === 'ganho' ? 'Sob controle de' : 'Cedido a'}</dt><dd>${terr.contraparte}</dd></div>
+              <div><dt>${terr.sentido === 'ganho' ? 'Incorporado em' : 'Perdido em'}</dt>
+                   <dd class="mono">${terr.sentido === 'ganho' ? terr.vigencia.de : terr.vigencia.ate}</dd></div>
               <div><dt>Ponto clicado</dt><dd class="mono">${onde}</dd></div>
             </dl>
             <p class="lacuna">${terr.nota}</p>`;
@@ -638,18 +699,18 @@ import { capitais, territorios } from '../data/paises/brasil';
       if (valorAno) valorAno.textContent = String(novo);
       if (barraAno && Number(barraAno.value) !== novo) barraAno.value = String(novo);
 
-      // capital em vigor no ano
-      const capital = capitais.find((c) => vigenteEm(c.vigencia, novo));
+      /* Capitais em vigor no ano — plural de propósito. A Bolívia tem Sucre
+         como capital constitucional e La Paz como sede de governo ao mesmo
+         tempo, e mostrar só a primeira apagaria metade do arranjo. */
+      const emVigor = capitais.filter((c) => vigenteEm(c.vigencia, novo));
       const fonteCapital = mapa.getSource('capital') as maplibregl.GeoJSONSource | undefined;
       fonteCapital?.setData({
         type: 'FeatureCollection',
-        features: capital
-          ? [{
-              type: 'Feature',
-              properties: { nome: capital.nome.valor },
-              geometry: { type: 'Point', coordinates: capital.ponto },
-            }]
-          : [],
+        features: emVigor.map((c) => ({
+          type: 'Feature',
+          properties: { nome: c.nome.valor, funcao: c.funcao ?? 'capital' },
+          geometry: { type: 'Point', coordinates: c.ponto },
+        })),
       });
 
       // Tordesilhas: some antes de 1494, vigora até 1750, depois fica como traço histórico
@@ -678,18 +739,21 @@ import { capitais, territorios } from '../data/paises/brasil';
 
       if (estadoTempo) {
         const fichas: string[] = [];
-        fichas.push(capital
-          ? `<span class="vigente">capital: ${capital.nome.valor}</span>`
-          : '<span>sem capital constituída</span>');
+        if (!emVigor.length) {
+          fichas.push('<span>sem capital constituída</span>');
+        } else for (const c of emVigor) {
+          fichas.push(`<span class="vigente">${c.funcao ?? 'capital'}: ${c.nome.valor}</span>`);
+        }
         if (mostrarTord) {
           fichas.push(tord === 'em vigor'
             ? '<span class="vigente">Tordesilhas em vigor</span>'
             : '<span class="revogada">Tordesilhas revogada em 1750</span>');
         }
         for (const t of pendentes) {
-          fichas.push(
-            `<span class="revogada">${t.nome.valor}: ${t.cedidoPor} até ${t.vigencia.de}</span>`,
-          );
+          const texto = t.sentido === 'ganho'
+            ? `${t.nome.valor}: de ${t.contraparte} só em ${t.vigencia.de}`
+            : `${t.nome.valor}: cedido a ${t.contraparte} em ${t.vigencia.ate}`;
+          fichas.push(`<span class="revogada">${texto}</span>`);
         }
         if (novo < ANO_MAXIMO) {
           fichas.push('<span>demais fronteiras e cidades são as de hoje</span>');

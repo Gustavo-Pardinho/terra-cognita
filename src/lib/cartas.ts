@@ -7,7 +7,7 @@
 
 import type { Carta } from './baralho';
 import type { Relacao } from './acervo';
-import { capitais, marcos, type Capital } from '../data/paises/brasil';
+import { capitais, marcos } from '../data/paises/brasil';
 import { vigenteEm } from './tempo';
 
 export interface UF { nome: string; sigla: string; regiao: string }
@@ -109,5 +109,3 @@ export function resumoDoBaralho(cartas: Carta[]): Array<{ tipo: string; n: numbe
   for (const c of cartas) por.set(c.tipo, (por.get(c.tipo) ?? 0) + 1);
   return [...por.entries()].map(([tipo, n]) => ({ tipo, n }));
 }
-
-export type { Capital };

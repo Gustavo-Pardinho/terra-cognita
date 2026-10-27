@@ -13,9 +13,10 @@
    declarado é valor que precisa ser revisitado.
    ========================================================================== */
 
-import { criarRegistro, type Fato, type Item, type Relacao, type Vigencia } from '../../lib/acervo';
+import { criarRegistro, type Capital, type Fato, type Relacao, type Territorio, type Vigencia } from '../../lib/acervo';
+import type { Marco, PaisItem, PranchaPais } from './prancha';
 
-export interface Pais extends Item {
+export interface Pais extends PaisItem {
   fisico: {
     area: Fato<number>;
     altitudeMaxima: Fato<number>;
@@ -49,12 +50,38 @@ export interface Pais extends Item {
   };
 }
 
-/** Uma capital e o período em que exerceu a função. */
-export interface Capital {
-  nome: Fato<string>;
-  ponto: [number, number];
-  vigencia: Vigencia;
-  nota?: string;
+export interface Pais extends PaisItem {
+  fisico: {
+    area: Fato<number>;
+    altitudeMaxima: Fato<number>;
+    pontoMaisAlto: Fato<string>;
+    fronteiraTerrestre: Fato<number>;
+    litoral: Fato<number>;
+    extremoNorte: Fato<string>;
+    extremoSul: Fato<string>;
+    biomas: Fato<number>;
+    maiorBioma: Fato<string>;
+    climaDominante: Fato<string>;
+  };
+  povo: {
+    populacao: Fato<number>;
+    densidade: Fato<number>;
+    urbanizacao: Fato<number>;
+    idioma: Fato<string>;
+  };
+  politica: {
+    forma: Fato<string>;
+    sistema: Fato<string>;
+    constituicao: Fato<string>;
+    unidadesFederativas: Fato<number>;
+    municipios: Fato<number>;
+    eleitorado: Fato<number>;
+  };
+  economia: {
+    pib: Fato<number>;
+    pibPerCapita: Fato<number>;
+    moeda: Fato<string>;
+  };
 }
 
 export const brasil: Pais = {
@@ -176,23 +203,15 @@ export const brasil: Pais = {
  * não tem. Em vez disso o território aparece hachurado e rotulado como em
  * disputa, que é o que a PR. 05 manda fazer.
  */
-export interface Territorio {
-  slug: string;
-  nome: Fato<string>;
-  /** sigla da unidade federativa em public/dados/ufs.geojson */
-  uf: string;
-  vigencia: Vigencia;
-  cedidoPor: string;
-  nota: string;
-}
-
 export const territorios: Territorio[] = [
   {
     slug: 'acre',
     nome: { valor: 'Acre', fonte: 'tratado-petropolis', precisao: 'exata' },
     uf: 'AC',
+    origem: 'brasil',
     vigencia: { de: 1903, precisao: 'exata' },
-    cedidoPor: 'Bolívia',
+    sentido: 'ganho',
+    contraparte: 'Bolívia',
     nota: 'Território boliviano ocupado por seringueiros brasileiros durante o ciclo da borracha. '
         + 'A Bolívia cedeu-o pelo Tratado de Petrópolis mediante indenização de dois milhões de libras '
         + 'e o compromisso de construir a ferrovia Madeira-Mamoré.',
@@ -228,7 +247,7 @@ export const capitais: Capital[] = [
 /** A capital em vigor hoje, derivada da sequência. */
 export const capitalAtual = capitais[capitais.length - 1]!;
 
-export const marcos: Array<{ ano: Fato<number>; titulo: string; nota: string }> = [
+export const marcos: Marco[] = [
   {
     ano: { valor: 1500, formato: 'ano', fonte: 'ibge-500-anos', precisao: 'exata' },
     titulo: 'Chegada da frota de Cabral',
@@ -298,3 +317,93 @@ export const trafico = {
  * diferentes fazia os números divergirem para o mesmo item.
  */
 export const registroBrasil = () => criarRegistro({ brasil, capitais, territorios, marcos, trafico });
+
+/* =============================================================================
+   A PRANCHA
+   ========================================================================== */
+export const prancha: PranchaPais = {
+  slug: 'brasil',
+  n: 1,
+  nome: 'Brasil',
+  regiao: 'América do Sul',
+  item: brasil,
+  capitais,
+  territorios,
+  marcos,
+  extras: { 'trafico.desembarcados': trafico.desembarcados },
+  registro: registroBrasil,
+  mapa: { centro: [-52.5, -14.5], zoom: 3.3 },
+  prosa: {
+    sintese:
+      'A maior extensão contínua da América do Sul, sem cordilheira interna e com dez '
+      + 'vizinhos terrestres — limites todos negociados em mesa, nenhum tomado em desfiladeiro.',
+    fisico:
+      'O território é grande o bastante para que nenhuma classe climática o descreva: a '
+      + 'dominante divide o país com semiárido, cerrado tropical sazonal e subtropical '
+      + 'úmido de inverno frio. A ausência de uma cordilheira interna é a característica '
+      + 'física que mais consequências políticas produziu — não há barreira orográfica '
+      + 'separando as regiões, e os rios correm para dentro em vez de para fora.',
+    fisicoNota: {
+      t: 'Por que a altitude importa aqui.',
+      d: 'Um país sem montanha alta não tem reserva de água em geleira, não tem passo de '
+       + 'montanha disputável e não tem fronteira natural defensável. As três ausências '
+       + 'aparecem na história diplomática: os limites brasileiros foram negociados em '
+       + 'mesa, não tomados em desfiladeiro.',
+    },
+    fisicoFalta: {
+      t: 'O que falta nesta prancha.',
+      d: 'Perfil topográfico e hipsometria por consulta dependem do DEM em resolução '
+       + 'maior que a assada. O relevo desenhado é o do atlas; medir altitude ponto a '
+       + 'ponto ainda não dá.',
+    },
+    povo:
+      'A densidade média esconde o fato central da geografia humana brasileira: a '
+      + 'população se concentra numa faixa litorânea estreita, e o interior permanece '
+      + 'vazio em escala continental. A média nacional descreve mal qualquer lugar real '
+      + 'do país — é o caso-escola de quando o coroplético por densidade engana e o '
+      + 'cartograma é o mapa certo.',
+    politica:
+      'A Constituição de 1988 fez do município um ente federado com competência própria '
+      + '— arranjo raro no mundo, e que explica por que o número de municípios é um dado '
+      + 'político e não apenas administrativo.',
+    economiaLeitura:
+      'O Brasil é a economia que mais consistentemente aparece na lista das dez maiores '
+      + 'do mundo sem nunca ter convergido para a renda alta. Ler isso como fracasso de '
+      + 'política econômica ou como efeito estrutural da posição na divisão internacional '
+      + 'do trabalho é uma escolha interpretativa, não um dado — e as duas leituras têm '
+      + 'literatura séria. Este atlas apresenta as duas quando chegar o verbete de '
+      + 'economia política.',
+    economiaNota: {
+      t: 'Cuidado com a comparação de PIB.',
+      d: 'Valores em moeda corrente não se comparam entre anos sem deflator, nem entre '
+       + 'países sem paridade de poder de compra. A série harmonizada do Banco Mundial '
+       + 'entra justamente para que a comparação deixe de depender do leitor fazer a '
+       + 'conversão de cabeça.',
+    },
+    geopolitica:
+      'São dez vizinhos terrestres: nove dos doze países sul-americanos — só Chile e '
+      + 'Equador ficam de fora — mais a Guiana Francesa, que é departamento ultramarino '
+      + 'da França e não país sul-americano. Essa é a característica que define sua '
+      + 'posição: nenhum vizinho é adversário histórico consolidado, e nenhuma fronteira '
+      + 'está hoje em litígio armado — situação incomum para um território dessa extensão.',
+    destaque: {
+      rotulo: 'Tráfico transatlântico',
+      caminho: 'trafico.desembarcados',
+      texto: 'de africanos escravizados desembarcados entre 1561 e 1856 — a maior cifra de '
+           + 'qualquer destino nas Américas, e cerca de 39% de todo o tráfico. Nenhum mapa do '
+           + 'Brasil se explica sem isso.',
+    },
+    questoes: [
+      { t: 'Área exata', d: 'O IBGE republica a área territorial todo ano conforme os limites municipais são refinados. Edições anteriores de atlas trazem números diferentes, e a divergência precisa aparecer em vez de ser resolvida em silêncio.' },
+      { t: 'Contagem de municípios', d: 'São 5.569 em lei, mas a série estatística do IBGE traz 5.571 porque conta Brasília e Fernando de Noronha. Três números circulam, e nenhum é errado — depende do que se está contando.' },
+      { t: 'Linha de costa', d: 'Depende inteiramente da escala de medição, que é o paradoxo da costa. Um número sem a escala junto é incompleto.' },
+      { t: 'Fronteira marítima', d: 'A plataforma continental estendida reivindicada pelo Brasil ainda não está totalmente homologada pela ONU; é território de status indefinido.' },
+    ],
+    leituras: [
+      { t: 'Caio Prado Jr.', d: 'Formação do Brasil Contemporâneo (1942)' },
+      { t: 'Sérgio Buarque de Holanda', d: 'Raízes do Brasil (1936)' },
+      { t: 'Celso Furtado', d: 'Formação Econômica do Brasil (1959)' },
+      { t: "Aziz Ab'Sáber", d: 'Os Domínios de Natureza no Brasil (2003)' },
+    ],
+  },
+};

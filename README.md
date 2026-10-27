@@ -125,6 +125,29 @@ por fórmula de destino geodésico em `src/lib/estado-mapa.ts`. Em Mercator eles
 a latitude; na ortográfica mudam de forma mas não de área. É a aula de distorção mais
 direta que um atlas pode dar.
 
+## O que a segunda prancha ensinou
+
+O molde foi provado com o Brasil e generalizado pela Bolívia, escolhida justamente por
+quebrá-lo. Quatro quebras, e cada uma virou uma distinção no molde:
+
+- **Duas capitais ao mesmo tempo.** O molde supunha sucessão — uma capital por vez, cada
+  qual com a sua vigência. Sucre é capital constitucional desde 1825 e La Paz é sede de
+  governo desde 1899, simultaneamente. Daí o campo `funcao`.
+- **Campo que não se aplica ≠ campo que falta.** A Bolívia é mediterrânea: `litoral` vem
+  `null` e a prancha declara «não se aplica — país mediterrâneo». Deixar em branco
+  pareceria dado faltando; a ausência de litoral é o fato mais importante da geografia
+  política boliviana.
+- **Perda de território, não só ganho.** `Territorio` ganhou `sentido` e `contraparte`. E
+  ganhou `origem`, porque território perdido não está no arquivo de subdivisões de quem o
+  perdeu: o Acre está no do Brasil, o Litoral está no do Chile.
+- **Nem todo país tem classificação oficial de biomas.** O Brasil tem o mapa do IBGE com
+  seis; a Bolívia não tem equivalente nacional. Inventar uma contagem a partir de
+  ecorregiões estrangeiras daria ao leitor um número com aparência oficial que nenhum
+  órgão do país publicou.
+
+A prancha de país deixou de ser página e virou rota dinâmica: acrescentar um país é
+acrescentar um arquivo em `src/data/paises/` e uma linha no registro.
+
 ## Armadilhas já pagas
 
 Três que custaram tempo e vão voltar a morder quem mexer aqui:

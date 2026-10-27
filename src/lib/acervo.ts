@@ -60,6 +60,51 @@ export interface Relacao {
   fonte?: string;
 }
 
+/* =============================================================================
+   ITENS QUE O ANO COMANDA
+   Vivem aqui, e não no arquivo de um país, porque a ilha do mapa os recebe por
+   parâmetro e não deve saber de qual prancha vieram.
+   ========================================================================== */
+
+/** Uma capital e o período em que exerceu a função. */
+export interface Capital {
+  nome: Fato<string>;
+  ponto: [number, number];
+  vigencia: Vigencia;
+  /**
+   * O que esta capital é, quando há mais de uma ao mesmo tempo. A Bolívia tem
+   * Sucre como capital constitucional e La Paz como sede de governo, e tratá-las
+   * como sucessão no tempo seria falsear o arranjo.
+   */
+  funcao?: string;
+  nota?: string;
+}
+
+/**
+ * Território com data de entrada ou de saída.
+ *
+ * `vigencia` é o período em que o território pertenceu ao país da prancha. Para
+ * um ganho basta `de`; para uma perda, `de` e `ate`. O mapa hachura justamente
+ * quando o ano está FORA da vigência, então a mesma regra serve aos dois casos.
+ *
+ * `origem` existe porque território perdido não está no arquivo de subdivisões
+ * de quem o perdeu: o Acre está no do Brasil, e o Litoral boliviano está no do
+ * Chile. Sem esse campo a prancha da Bolívia não teria como desenhar o que perdeu.
+ */
+export interface Territorio {
+  slug: string;
+  nome: Fato<string>;
+  /** sigla da subdivisão dentro do arquivo de `origem` */
+  uf: string;
+  /** slug do país cujo arquivo de subdivisões contém a geometria hoje */
+  origem: string;
+  vigencia: Vigencia;
+  sentido: 'ganho' | 'perda';
+  /** quem cedeu, no ganho; a quem foi cedido, na perda */
+  contraparte: string;
+  nota: string;
+}
+
 /** base comum a todo item do acervo, qualquer que seja o tipo */
 export interface Item {
   slug: string;

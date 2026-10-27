@@ -13,9 +13,6 @@ const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SAIDA = resolve(RAIZ, 'public/dados');
 const BASE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson';
 
-/* As macrorregiões não vêm no Natural Earth (o campo `region` é nulo para o
-   Brasil). São divisão oficial do IBGE desde 1970, dado de referência estável —
-   fonte: IBGE, Divisão Regional do Brasil. */
 const REGIAO_POR_UF = {
   AC: 'Norte', AP: 'Norte', AM: 'Norte', PA: 'Norte', RO: 'Norte', RR: 'Norte', TO: 'Norte',
   AL: 'Nordeste', BA: 'Nordeste', CE: 'Nordeste', MA: 'Nordeste', PB: 'Nordeste',
@@ -25,10 +22,33 @@ const REGIAO_POR_UF = {
   PR: 'Sul', RS: 'Sul', SC: 'Sul',
 };
 
-const VIZINHOS = new Set([
-  'Uruguay', 'Argentina', 'Paraguay', 'Bolivia', 'Peru', 'Colombia',
-  'Venezuela', 'Guyana', 'Suriname', 'France', 'Chile', 'Ecuador',
-]);
+/* Países recortados do acervo. O contorno de todos vai num arquivo só: cada
+   prancha realça o seu e lança véu sobre o resto, então não há motivo para um
+   arquivo de "vizinhos" por país. `ne` é o nome no Natural Earth. */
+const PAISES = [
+  { slug: 'brasil',     ne: 'Brazil' },
+  { slug: 'bolivia',    ne: 'Bolivia' },
+  { slug: 'argentina',  ne: 'Argentina' },
+  { slug: 'chile',      ne: 'Chile' },
+  { slug: 'peru',       ne: 'Peru' },
+  { slug: 'colombia',   ne: 'Colombia' },
+  { slug: 'venezuela',  ne: 'Venezuela' },
+  { slug: 'equador',    ne: 'Ecuador' },
+  { slug: 'paraguai',   ne: 'Paraguay' },
+  { slug: 'uruguai',    ne: 'Uruguay' },
+  { slug: 'guiana',     ne: 'Guyana' },
+  { slug: 'suriname',   ne: 'Suriname' },
+  { slug: 'franca',     ne: 'France' },   // pela Guiana Francesa
+];
+
+/* Quais têm prancha com subdivisões e cidades recortadas. Recortar os treze
+   custaria megabytes que nenhuma prancha ainda lê. */
+const COM_PRANCHA = ['brasil', 'bolivia', 'chile'];
+// Chile entra não por ter prancha, mas porque a geometria do Litoral que a
+// Bolívia perdeu em 1884 está no arquivo de subdivisões dele.
+
+/* Macrorregiões do IBGE — o campo `region` do Natural Earth é nulo para o
+   Brasil. Divisão oficial desde 1970. */
 
 async function baixar(nome) {
   const url = `${BASE}/${nome}.geojson`;
@@ -78,54 +98,59 @@ async function principal() {
   const paises = await baixar('ne_50m_admin_0_countries');
   const nome = (p) => p.NAME_EN ?? p.NAME ?? p.ADMIN ?? p.SOVEREIGNT;
 
-  const brasil = paises.features.find((f) => nome(f.properties) === 'Brazil');
-  if (!brasil) throw new Error('Brasil não encontrado no acervo de países.');
-  await gravar('brasil.geojson', fc([{
-    type: 'Feature',
-    properties: { slug: 'brasil', nome: 'Brasil', iso: 'BRA' },
-    geometry: enxugar(brasil.geometry),
-  }]));
-
-  const vizinhos = paises.features
-    .filter((f) => VIZINHOS.has(nome(f.properties)))
-    .map((f, i) => ({
+  // contorno de todos num arquivo só, cada um com o seu slug
+  const contornos = [];
+  for (const { slug, ne } of PAISES) {
+    const f = paises.features.find((x) => nome(x.properties) === ne);
+    if (!f) { console.warn(`  país não encontrado no acervo: ${ne}`); continue; }
+    contornos.push({
       type: 'Feature',
-      properties: { nome: nome(f.properties), tinta: (i % 4) + 1 },
+      properties: { slug, nome: nome(f.properties) },
       geometry: enxugar(f.geometry),
-    }));
-  await gravar('vizinhos.geojson', fc(vizinhos));
+    });
+  }
+  await gravar('paises.geojson', fc(contornos));
+  console.log(`     ${contornos.length} contornos`);
 
   const lugares = await baixar('ne_10m_populated_places_simple');
-  const cidades = lugares.features
-    .filter((f) => f.properties.adm0name === 'Brazil')
-    .map((f) => ({
-      type: 'Feature',
-      properties: {
-        nome: f.properties.name,
-        pop: f.properties.pop_max ?? 0,
-        capital: f.properties.featurecla?.includes('Admin-0') ? 1 : 0,
-        uf: f.properties.adm1name ?? '',
-      },
-      geometry: enxugar(f.geometry, 4),
-    }))
-    .sort((a, b) => b.properties.pop - a.properties.pop)
-    .slice(0, 60);
-  await gravar('cidades.geojson', fc(cidades));
-
   const estados = await baixar('ne_10m_admin_1_states_provinces');
-  const ufs = estados.features
-    .filter((f) => f.properties.admin === 'Brazil' || f.properties.iso_a2 === 'BR')
-    .map((f) => ({
-      type: 'Feature',
-      properties: {
-        nome: f.properties.name,
-        sigla: (f.properties.postal ?? f.properties.iso_3166_2 ?? '').replace('BR-', ''),
-        regiao: REGIAO_POR_UF[(f.properties.postal ?? '').replace('BR-', '')] ?? '',
-      },
-      geometry: enxugar(f.geometry),
-    }));
-  await gravar('ufs.geojson', fc(ufs));
-  console.log(`     ${ufs.length} unidades federativas`);
+
+  for (const slug of COM_PRANCHA) {
+    const ne = PAISES.find((p) => p.slug === slug).ne;
+
+    const cidades = lugares.features
+      .filter((f) => f.properties.adm0name === ne)
+      .map((f) => ({
+        type: 'Feature',
+        properties: {
+          nome: f.properties.name,
+          pop: f.properties.pop_max ?? 0,
+          capital: f.properties.featurecla?.includes('Admin-0') ? 1 : 0,
+          uf: f.properties.adm1name ?? '',
+        },
+        geometry: enxugar(f.geometry, 4),
+      }))
+      .sort((a, b) => b.properties.pop - a.properties.pop)
+      .slice(0, 60);
+    await gravar(`${slug}-cidades.geojson`, fc(cidades));
+
+    const subs = estados.features
+      .filter((f) => f.properties.admin === ne)
+      .map((f) => {
+        const sigla = (f.properties.postal ?? f.properties.iso_3166_2 ?? '').replace(/^[A-Z]{2}-/, '');
+        return {
+          type: 'Feature',
+          properties: {
+            nome: f.properties.name,
+            sigla,
+            regiao: slug === 'brasil' ? (REGIAO_POR_UF[sigla] ?? '') : (f.properties.region ?? ''),
+          },
+          geometry: enxugar(f.geometry),
+        };
+      });
+    await gravar(`${slug}-subdivisoes.geojson`, fc(subs));
+    console.log(`     ${slug}: ${cidades.length} cidades, ${subs.length} subdivisões`);
+  }
 
   const rios = await baixar('ne_50m_rivers_lake_centerlines');
   const naAmSul = (g) => {

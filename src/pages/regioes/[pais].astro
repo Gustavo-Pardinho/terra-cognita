@@ -1,0 +1,282 @@
+---
+/* =============================================================================
+   MOLDE DA PRANCHA DE PAÍS
+   Oito blocos sempre na mesma ordem (PR. 03). Nenhum número é digitado aqui:
+   todos vêm do acervo via <Dado>, e o caminho é montado a partir do slug.
+
+   Campo que não se aplica ao país — litoral numa mediterrânea, biomas onde não
+   há classificação oficial — vem como null e a prancha DECLARA a ausência. Foi a
+   segunda prancha, a da Bolívia, que obrigou essa distinção entre campo que
+   falta e campo que não se aplica.
+   ========================================================================== */
+import Base from '../../layouts/Base.astro';
+import Prancha from '../../components/Prancha.astro';
+import Dado from '../../components/Dado.astro';
+import Fontes from '../../components/Fontes.astro';
+import Pendencias from '../../components/Pendencias.astro';
+import RampaHipso from '../../components/RampaHipso.astro';
+import MapaPrancha from '../../islands/MapaPrancha.astro';
+import { PRANCHAS } from '../../data/paises';
+import { formatarVigencia, formatarCoordenada } from '../../lib/acervo';
+import { vigenteEm, ANO_MAXIMO } from '../../lib/tempo';
+
+export function getStaticPaths() {
+  return PRANCHAS.map((prancha) => ({ params: { pais: prancha.slug }, props: { prancha } }));
+}
+
+const { prancha } = Astro.props;
+const { slug, nome, item, capitais, territorios, marcos, prosa, mapa } = prancha;
+const r = prancha.registro();
+const k = (caminho: string) => `${slug}.${caminho}`;
+
+const limitrofes = (item.relacoes ?? []).filter((x) => x.tipo === 'faz-fronteira-com');
+const vigentes = capitais.filter((c) => vigenteEm(c.vigencia, ANO_MAXIMO));
+const meta = `${r.total()} fatos · ${r.fontes().length} fontes · ${r.pendencias().length} a conferir`;
+
+/** medidas do bloco físico, já sabendo quais não se aplicam */
+const medidas = [
+  { rot: 'Área total',        caminho: 'fisico.area',               valor: item.fisico.area },
+  { rot: 'Fronteira terrestre', caminho: 'fisico.fronteiraTerrestre', valor: item.fisico.fronteiraTerrestre },
+  { rot: 'Linha de costa',    caminho: 'fisico.litoral',            valor: item.fisico.litoral,
+    ausente: 'país mediterrâneo' },
+  { rot: 'Altitude máxima',   caminho: 'fisico.altitudeMaxima',     valor: item.fisico.altitudeMaxima },
+  { rot: 'Extremo norte',     caminho: 'fisico.extremoNorte',       valor: item.fisico.extremoNorte },
+  { rot: 'Extremo sul',       caminho: 'fisico.extremoSul',         valor: item.fisico.extremoSul },
+  { rot: 'Biomas',            caminho: 'fisico.biomas',             valor: item.fisico.biomas,
+    ausente: 'sem classificação nacional' },
+  { rot: 'Maior bioma',       caminho: 'fisico.maiorBioma',         valor: item.fisico.maiorBioma,
+    ausente: 'sem classificação nacional' },
+];
+---
+<Base titulo={nome} descricao={`Prancha de país: ${prosa.sintese}`} larga>
+
+  <!-- ===================== O MAPA ===================== -->
+  <Prancha n={1} titulo={nome} meta={meta}>
+    <div class="cabeca">
+      <div>
+        <h1 class="nome">{nome}</h1>
+        <p class="oficial"><Dado r={r} k={k('nomeOficial')} /></p>
+        <p class="sintese fina">{prosa.sintese}</p>
+        <dl class="ficha">
+          <div><dt>Vigência</dt><dd class="mono">{formatarVigencia(item.vigencia)}</dd></div>
+          <div><dt>Ponto representativo</dt><dd class="mono">{formatarCoordenada(item.ponto!)}</dd></div>
+          {vigentes.map((c, i) => (
+            <div>
+              <dt>{c.funcao ? c.funcao[0]!.toUpperCase() + c.funcao.slice(1) : 'Capital'}</dt>
+              <dd>
+                <Dado r={r} k={`capitais.${capitais.indexOf(c)}.nome`} />
+                <span class="fina"> desde {c.vigencia.de}</span>
+              </dd>
+            </div>
+          ))}
+          <div><dt>População</dt><dd><Dado r={r} k={k('povo.populacao')} comAno /></dd></div>
+        </dl>
+      </div>
+      <aside class="legenda">
+        <h4>Rampa hipsométrica</h4>
+        <RampaHipso />
+        <p class="fina" style="margin-top:var(--s-3)">
+          A mesma rampa serve a prancha inteira. O ponto mais alto deste território,
+          <Dado r={r} k={k('fisico.pontoMaisAlto')} />, chega a
+          <Dado r={r} k={k('fisico.altitudeMaxima')} />.
+        </p>
+      </aside>
+    </div>
+
+    <MapaPrancha pais={slug} centro={mapa.centro} zoom={mapa.zoom}
+                 capitais={capitais} territorios={territorios} />
+  </Prancha>
+
+  <!-- ===================== 1. PERFIL FÍSICO ===================== -->
+  <Prancha n={2} titulo="Perfil físico" meta="Bloco 1 de 8">
+    <div class="grade">
+      <div class="verbete">
+        <p>{prosa.fisico}</p>
+        <h3>Medidas</h3>
+        <dl class="ficha">
+          {medidas.map((m) => (
+            <div>
+              <dt>{m.rot}</dt>
+              <dd>{m.valor
+                ? <Dado r={r} k={k(m.caminho)} />
+                : <span class="nao-se-aplica">não se aplica — {m.ausente}</span>}</dd>
+            </div>
+          ))}
+          <div><dt>Clima dominante</dt><dd><Dado r={r} k={k('fisico.climaDominante')} /></dd></div>
+        </dl>
+      </div>
+      <aside>
+        <div class="nota"><strong>{prosa.fisicoNota.t}</strong> {prosa.fisicoNota.d}</div>
+        <div class="nota" style="margin-top:var(--s-4)">
+          <strong>{prosa.fisicoFalta.t}</strong> {prosa.fisicoFalta.d}
+        </div>
+      </aside>
+    </div>
+  </Prancha>
+
+  <!-- ===================== 2 e 3. POVO E POLÍTICA ===================== -->
+  <Prancha n={3} titulo="Povo e sistema político" meta="Blocos 2 e 3 de 8">
+    <div class="grade grade--par">
+      <div class="verbete">
+        <h3>Povo</h3>
+        <dl class="ficha">
+          <div><dt>População</dt><dd><Dado r={r} k={k('povo.populacao')} comAno /></dd></div>
+          <div><dt>Densidade</dt><dd><Dado r={r} k={k('povo.densidade')} /></dd></div>
+          <div><dt>Urbanização</dt><dd><Dado r={r} k={k('povo.urbanizacao')} /></dd></div>
+          <div><dt>Idioma oficial</dt><dd><Dado r={r} k={k('povo.idioma')} /></dd></div>
+        </dl>
+        <p class="fina" style="margin-top:var(--s-4)">{prosa.povo}</p>
+      </div>
+      <div class="verbete">
+        <h3>Sistema político</h3>
+        <dl class="ficha">
+          <div><dt>Forma de Estado</dt><dd><Dado r={r} k={k('politica.forma')} /></dd></div>
+          <div><dt>Legislativo</dt><dd><Dado r={r} k={k('politica.sistema')} /></dd></div>
+          <div><dt>Constituição vigente</dt><dd><Dado r={r} k={k('politica.constituicao')} /></dd></div>
+          <div><dt>Subdivisões</dt><dd><Dado r={r} k={k('politica.unidadesFederativas')} /></dd></div>
+          <div><dt>Municípios</dt><dd><Dado r={r} k={k('politica.municipios')} comAno /></dd></div>
+          <div><dt>Eleitorado</dt><dd><Dado r={r} k={k('politica.eleitorado')} comAno /></dd></div>
+        </dl>
+        <p class="fina" style="margin-top:var(--s-4)">{prosa.politica}</p>
+      </div>
+    </div>
+  </Prancha>
+
+  <!-- ===================== 4. ECONOMIA ===================== -->
+  <Prancha n={4} titulo="Economia" meta="Bloco 4 de 8">
+    <div class="grade">
+      <div class="verbete">
+        <dl class="ficha">
+          <div><dt>PIB</dt><dd><Dado r={r} k={k('economia.pib')} comAno /></dd></div>
+          <div><dt>PIB per capita</dt><dd><Dado r={r} k={k('economia.pibPerCapita')} comAno /></dd></div>
+          <div><dt>Moeda</dt><dd><Dado r={r} k={k('economia.moeda')} /></dd></div>
+        </dl>
+        <div class="leitura" style="margin-top:var(--s-5)">{prosa.economiaLeitura}</div>
+      </div>
+      <aside>
+        <div class="nota nota--alerta">
+          <strong>{prosa.economiaNota.t}</strong> {prosa.economiaNota.d}
+        </div>
+      </aside>
+    </div>
+  </Prancha>
+
+  <!-- ===================== 5. HISTÓRIA ===================== -->
+  <Prancha n={5} titulo="História" meta="Bloco 5 de 8 · lente Tempo">
+    <p class="abertura">
+      Os mesmos itens do acervo, vistos pela lente do tempo. Leve qualquer um destes
+      anos ao <a href="/atlas">mapa</a> e veja o que estava em vigor.
+    </p>
+    <ol class="tempo">
+      {marcos.map((m, i) => (
+        <li>
+          <span class="tempo__ano"><Dado r={r} k={`marcos.${i}.ano`} /></span>
+          <div><b>{m.titulo}</b><p class="fina">{m.nota}</p></div>
+        </li>
+      ))}
+    </ol>
+    {prosa.destaque && (
+      <p class="fina" style="margin-top:var(--s-4)">
+        <strong>{prosa.destaque.rotulo}:</strong>
+        <Dado r={r} k={prosa.destaque.caminho} /> {prosa.destaque.texto}
+      </p>
+    )}
+  </Prancha>
+
+  <!-- ===================== 6. GEOPOLÍTICA ===================== -->
+  <Prancha n={6} titulo="Posição geopolítica" meta="Bloco 6 de 8 · lente Rede">
+    <div class="grade">
+      <div class="verbete">
+        <p>{prosa.geopolitica}</p>
+        <h3>Relações do acervo</h3>
+        <div class="rolagem">
+          <table>
+            <thead><tr><th>Relação</th><th>Alvo</th><th>Vigência</th></tr></thead>
+            <tbody>
+              {(item.relacoes ?? []).map((rel) => (
+                <tr>
+                  <td>{rel.tipo.replace(/-/g, ' ')}</td>
+                  <td>{rel.alvo.replace(/-/g, ' ')}</td>
+                  <td class="num">{rel.vigencia ? formatarVigencia(rel.vigencia) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {territorios.length > 0 && (
+          <>
+            <h3>Territórios com data</h3>
+            <ul class="lista">
+              {territorios.map((t) => (
+                <li>
+                  <b>{t.nome.valor}</b>
+                  <span> — {t.sentido === 'ganho'
+                    ? `recebido de ${t.contraparte} em ${t.vigencia.de}`
+                    : `cedido a ${t.contraparte} em ${t.vigencia.ate}`}. {t.nota}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+      <aside>
+        <div class="legenda">
+          <h4>Limítrofes</h4>
+          <ul class="lista">{limitrofes.map((l) => <li><b>{l.alvo.replace(/-/g, ' ')}</b></li>)}</ul>
+        </div>
+        {prosa.geopoliticaNota && (
+          <div class="nota nota--alerta" style="margin-top:var(--s-4)">
+            <strong>{prosa.geopoliticaNota.t}</strong> {prosa.geopoliticaNota.d}
+          </div>
+        )}
+      </aside>
+    </div>
+  </Prancha>
+
+  <!-- ===================== 7 e 8. QUESTÕES E FONTES ===================== -->
+  <Prancha n={7} titulo="Questões abertas e procedência" meta="Blocos 7 e 8 de 8">
+    <div class="grade">
+      <div class="verbete">
+        <h3>Questões abertas</h3>
+        <ul class="lista">
+          {prosa.questoes.map((q) => <li><b>{q.t}</b> <span>— {q.d}</span></li>)}
+        </ul>
+        <h3>Leitura adicional</h3>
+        <ul class="lista">
+          {prosa.leituras.map((l) => <li><b>{l.t}</b> <span>— {l.d}</span></li>)}
+        </ul>
+      </div>
+      <aside><Pendencias r={r} /></aside>
+    </div>
+    <div style="margin-top:var(--s-6)"><Fontes r={r} /></div>
+    <div class="colofao">
+      <span>Terra Cognita · Prancha {String(prancha.n).padStart(2, '0')}</span>
+      <span class="mono">{r.total()} fatos · {r.fontes().length} fontes</span>
+      <span>{prancha.regiao}</span>
+    </div>
+  </Prancha>
+</Base>
+
+<style>
+  .cabeca { display: grid; gap: var(--s-gap); grid-template-columns: 1fr; margin-bottom: var(--s-5); }
+  @media (min-width: 880px) { .cabeca { grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); } }
+  .nome {
+    font-family: var(--serif); font-weight: 400; font-size: var(--t-3xl);
+    text-transform: uppercase; letter-spacing: .06em; line-height: 1; margin: 0;
+  }
+  .oficial { font-family: var(--sans); font-size: var(--t-sm); color: var(--ink-2); margin: var(--s-2) 0 0; }
+  .sintese { margin: var(--s-3) 0 var(--s-4); max-width: 52ch; }
+
+  .nao-se-aplica { font-family: var(--sans); font-size: var(--t-xs); color: var(--ink-3); font-style: italic; }
+
+  .tempo { list-style: none; padding: 0; margin-top: var(--s-5); }
+  .tempo li {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: var(--s-4);
+    padding: var(--s-3) 0; border-top: 1px solid var(--rule-fine);
+  }
+  .tempo li:first-child { border-top: 1px solid var(--rule); }
+  .tempo__ano { color: var(--brass); font-size: var(--t-sm); padding-top: .15rem; }
+  .tempo b { font-family: var(--sans); font-size: .95rem; }
+  .tempo p { margin-top: .2rem; max-width: min(var(--medida), 100%); }
+  @media (max-width: 560px) { .tempo li { grid-template-columns: 1fr; gap: var(--s-1); } }
+</style>

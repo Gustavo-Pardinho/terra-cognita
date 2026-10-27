@@ -7,47 +7,57 @@
    ========================================================================== */
 import Base from '../layouts/Base.astro';
 import Prancha from '../components/Prancha.astro';
-import Dado from '../components/Dado.astro';
 import Fontes from '../components/Fontes.astro';
-import { capitais, territorios, marcos, registroBrasil } from '../data/paises/brasil';
+import { PRANCHAS } from '../data/paises';
 import { ANO_MINIMO, ANO_MAXIMO, TORDESILHAS, posicaoNaFaixa } from '../lib/tempo';
 import { formatarVigencia } from '../lib/acervo';
 
-const r = registroBrasil();
+const pranchas = PRANCHAS;
+// a lente Tempo cruza as pranchas: o mesmo ano em países diferentes
+const r = pranchas[0]!.registro();
+const marcos = pranchas.flatMap((p) => p.marcos.map((m) => ({ ...m, pais: p.nome, slug: p.slug })))
+  .sort((a, b) => a.ano.valor - b.ano.valor);
 
 /** tudo que tem vigência declarada, para o corte sincrônico */
 const comVigencia = [
-  ...capitais.map((c) => ({
-    rotulo: 'Capital', termo: 'anterior', nome: c.nome.valor, vigencia: c.vigencia, nota: c.nota,
-  })),
+  ...pranchas.flatMap((p) => p.capitais.map((c) => ({
+    rotulo: 'Capital', termo: 'anterior', pais: p.nome,
+    nome: c.funcao ? `${c.nome.valor} (${c.funcao})` : c.nome.valor,
+    vigencia: c.vigencia, nota: c.nota,
+  }))),
   {
-    rotulo: 'Tratado', termo: 'revogado', nome: 'Tordesilhas',
+    rotulo: 'Tratado', termo: 'revogado', pais: '—', nome: 'Tordesilhas',
     vigencia: { de: TORDESILHAS.assinado, ate: TORDESILHAS.revogado },
     nota: 'Limite a 370 léguas a oeste de Cabo Verde. O meridiano exato é disputado — por isso o mapa desenha a faixa inteira.',
   },
-  ...territorios.map((t) => ({
-    rotulo: 'Território', termo: 'anterior', nome: `${t.nome.valor} (incorporado)`,
+  ...pranchas.flatMap((p) => p.territorios.map((t) => ({
+    rotulo: 'Território', termo: t.sentido === 'ganho' ? 'anterior' : 'cedido', pais: p.nome,
+    nome: t.nome.valor,
     vigencia: t.vigencia,
-    nota: `Sob controle de ${t.cedidoPor} até ${t.vigencia.de}. ${t.nota}`,
-  })),
+    nota: t.sentido === 'ganho'
+      ? `Sob controle de ${t.contraparte} até ${t.vigencia.de}. ${t.nota}`
+      : `Cedido a ${t.contraparte} em ${t.vigencia.ate}. ${t.nota}`,
+  }))),
   {
-    rotulo: 'Entidade política', termo: 'extinta', nome: 'República Federativa do Brasil',
+    rotulo: 'Entidade política', termo: 'extinta', pais: 'Brasil',
+    nome: 'República Federativa do Brasil',
     vigencia: { de: 1889 }, nota: 'Sucede o Império do Brasil.',
   },
 ];
 
 const eixo = marcos.map((m, i) => ({
-  i, ano: m.ano.valor, titulo: m.titulo, nota: m.nota,
+  i, ano: m.ano.valor, titulo: m.titulo, nota: m.nota, pais: m.pais,
   pos: posicaoNaFaixa(m.ano.valor) * 100,
 }));
 ---
 <Base titulo="Tempo" descricao="A lente Tempo do Terra Cognita: a linha do tempo dos marcos e o corte sincrônico do que estava em vigor em cada ano." larga>
 
-  <Prancha n={1} titulo="A linha do tempo" meta={`${marcos.length} marcos · ${ANO_MINIMO}–${ANO_MAXIMO}`}>
+  <Prancha n={1} titulo="A linha do tempo" meta={`${marcos.length} marcos · ${pranchas.length} países · ${ANO_MINIMO}–${ANO_MAXIMO}`}>
     <p class="abertura">
       O eixo abaixo é proporcional: a distância entre dois marcos na tela é a distância
-      real entre eles no tempo. Mova o ano e veja o que estava em vigor — e depois leve
-      esse mesmo ano para o mapa.
+      real entre eles no tempo. Os marcos de todas as pranchas entram no mesmo eixo, e é
+      aí que o cruzamento aparece: 1903 é ganho de um país e perda de outro, com o mesmo
+      tratado citado dos dois lados.
     </p>
 
     <div class="controle">
@@ -70,9 +80,9 @@ const eixo = marcos.map((m, i) => ({
       <ol class="marcos">
         {eixo.map((e) => (
           <li data-ano={e.ano}>
-            <span class="marcos__ano"><Dado r={r} k={`marcos.${e.i}.ano`} /></span>
+            <span class="marcos__ano mono">{e.ano}</span>
             <div>
-              <b>{e.titulo}</b>
+              <b>{e.titulo}</b> <span class="marcos__pais versalete">{e.pais}</span>
               <p class="fina">{e.nota}</p>
             </div>
           </li>
@@ -90,11 +100,12 @@ const eixo = marcos.map((m, i) => ({
         </p>
         <div class="rolagem" style="margin-top:var(--s-4)">
           <table>
-            <thead><tr><th>Tipo</th><th>Item</th><th>Vigência</th><th>Em <span id="ano-tabela">{ANO_MAXIMO}</span></th></tr></thead>
+            <thead><tr><th>Tipo</th><th>País</th><th>Item</th><th>Vigência</th><th>Em <span id="ano-tabela">{ANO_MAXIMO}</span></th></tr></thead>
             <tbody>
               {comVigencia.map((v) => (
                 <tr data-de={v.vigencia.de ?? ''} data-ate={'ate' in v.vigencia && v.vigencia.ate !== undefined ? v.vigencia.ate : ''} data-termo={v.termo}>
                   <td class="fina">{v.rotulo}</td>
+                  <td class="fina">{v.pais}</td>
                   <td><b>{v.nome}</b><div class="fina">{v.nota}</div></td>
                   <td class="num">{formatarVigencia(v.vigencia)}</td>
                   <td><span class="estado"></span></td>
@@ -169,6 +180,7 @@ const eixo = marcos.map((m, i) => ({
   .marcos li:first-child { border-top: 1px solid var(--rule); }
   .marcos li[data-futuro] { opacity: .32; }
   .marcos__ano { color: var(--brass); font-size: var(--t-sm); padding-top: .15rem; }
+  .marcos__pais { margin-left: .4rem; }
   .marcos b { font-family: var(--sans); font-size: .95rem; }
   .marcos p { margin-top: .2rem; max-width: min(var(--medida), 100%); }
   @media (max-width: 560px) {

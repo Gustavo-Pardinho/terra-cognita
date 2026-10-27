@@ -3,11 +3,11 @@
 import Base from '../layouts/Base.astro';
 import Prancha from '../components/Prancha.astro';
 import { FONTES, type Fonte } from '../lib/fontes';
-import { registroBrasil } from '../data/paises/brasil';
+import { PRANCHAS } from '../data/paises';
 
 const todas: Fonte[] = Object.values(FONTES);
 todas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
-const emUso = new Set(registroBrasil().fontes().map((f) => f.id));
+const emUso = new Set(PRANCHAS.flatMap((p) => p.registro().fontes().map((f) => f.id)));
 
 /** licenças com cláusula não comercial, separadas por já estarem em uso ou não */
 const naoComercial = todas.filter((f) => /não.comercial|\bNC\b|-NC/i.test(f.licenca));

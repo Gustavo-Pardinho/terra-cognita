@@ -23,7 +23,7 @@ type Verbete = {
 const entradas: Verbete[] = [];
 
 // --- unidades federativas ---------------------------------------------------
-for (const f of ler('ufs.geojson').features) {
+for (const f of ler('brasil-subdivisoes.geojson').features) {
   const p = f.properties;
   entradas.push({
     nome: p.nome, tipo: 'unidade federativa',
@@ -33,7 +33,7 @@ for (const f of ler('ufs.geojson').features) {
 
 // --- cidades ----------------------------------------------------------------
 const vistos = new Set<string>();
-for (const f of ler('cidades.geojson').features) {
+for (const f of ler('brasil-cidades.geojson').features) {
   const p = f.properties;
   const nome = p.nome === 'Brasilia' ? 'Brasília' : p.nome;
   if (vistos.has(nome)) continue;            // o gazeteiro traz homônimos
@@ -71,7 +71,7 @@ for (const c of capitais) {
 for (const t of territorios) {
   entradas.push({
     nome: t.nome.valor, tipo: 'território incorporado',
-    onde: `de ${t.cedidoPor} em ${t.vigencia.de}`, prancha: '/tempo',
+    onde: t.sentido === 'ganho' ? `de ${t.contraparte} em ${t.vigencia.de}` : `cedido a ${t.contraparte} em ${t.vigencia.ate}`, prancha: '/tempo',
   });
 }
 
