@@ -1,0 +1,245 @@
+---
+/* =============================================================================
+   REDE — a quarta lente
+   Mapa, Tempo e Verbete já existem. A Rede responde «com quem», e lê exatamente
+   os mesmos itens: as relações já estavam no acervo desde a primeira prancha.
+
+   O diagrama usa posição geográfica real. Não é um mapa — não se mede distância
+   nele —, mas num atlas a rede tem lugar, e ver que a aresta do Acre liga dois
+   vizinhos enquanto a do Litoral chega ao mar diz mais que um layout de força.
+   ========================================================================== */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import Base from '../layouts/Base.astro';
+import Prancha from '../components/Prancha.astro';
+import { PRANCHAS } from '../data/paises';
+import { obterFonte } from '../lib/fontes';
+import { centroide, projetar, arco, type Aresta, type No } from '../lib/rede';
+
+const L = 760, A = 560;
+
+const paises = JSON.parse(
+  readFileSync(resolve(process.cwd(), 'public/dados/paises.geojson'), 'utf8'),
+) as GeoJSON.FeatureCollection;
+
+const comPrancha = new Set(PRANCHAS.map((p) => p.slug));
+
+/* --- nós: um por país do acervo ------------------------------------------- */
+const nos: No[] = [];
+for (const f of paises.features) {
+  const slug = (f.properties as { slug: string }).slug;
+  if (slug === 'franca') continue;          // entra só pela Guiana Francesa
+  const prancha = PRANCHAS.find((p) => p.slug === slug);
+  const ponto = prancha?.item.ponto ?? centroide(f.geometry);
+  if (!ponto) continue;
+  nos.push({
+    slug,
+    rotulo: prancha?.nome ?? slug.charAt(0).toUpperCase() + slug.slice(1),
+    ponto,
+    temPrancha: comPrancha.has(slug),
+  });
+}
+const porSlug = new Map(nos.map((n) => [n.slug, n]));
+
+/* --- arestas: fronteiras e transferências de território -------------------- */
+const arestas: Aresta[] = [];
+const vistas = new Set<string>();
+/** transferências como cada prancha as declara, antes de virarem um evento só */
+const brutas: Array<{ prancha: string; aresta: Aresta }> = [];
+
+for (const p of PRANCHAS) {
+  for (const rel of p.item.relacoes ?? []) {
+    if (rel.tipo !== 'faz-fronteira-com') continue;
+    if (!porSlug.has(rel.alvo)) continue;
+    const chave = [p.slug, rel.alvo].sort().join('|');
+    if (vistas.has(chave)) continue;        // fronteira é recíproca: uma aresta só
+    vistas.add(chave);
+    arestas.push({ de: p.slug, para: rel.alvo, tipo: 'fronteira' });
+  }
+  for (const t of p.territorios) {
+    const outro = nos.find((n) => n.rotulo === t.contraparte);
+    if (!outro) continue;
+    const ano = t.sentido === 'ganho' ? t.vigencia.de : t.vigencia.ate;
+    brutas.push({
+      prancha: p.slug,
+      aresta: {
+        de: t.sentido === 'ganho' ? outro.slug : p.slug,
+        para: t.sentido === 'ganho' ? p.slug : outro.slug,
+        tipo: 'territorio',
+        rotulo: t.nome.valor,
+        ano,
+        fonte: t.nome.fonte,
+        nota: t.nota,
+      },
+    });
+  }
+}
+
+/* A mesma transferência é declarada pelas duas pranchas — ganho numa, perda na
+   outra. São o mesmo evento e precisam virar uma aresta só; desenhar as duas
+   empilha o rótulo sobre si mesmo. A duplicidade, porém, é o dado interessante,
+   e por isso é medida ANTES de deduplicar. */
+const chaveEvento = (a: Aresta) => `${a.de}>${a.para}|${a.ano}|${a.fonte}`;
+
+const citacoes = new Map<string, Set<string>>();
+for (const { prancha, aresta } of brutas) {
+  const ch = chaveEvento(aresta);
+  citacoes.set(ch, (citacoes.get(ch) ?? new Set()).add(prancha));
+}
+
+const jaVista = new Set<string>();
+for (const { aresta } of brutas) {
+  const ch = chaveEvento(aresta);
+  if (jaVista.has(ch)) continue;
+  jaVista.add(ch);
+  arestas.push(aresta);
+}
+
+/* --- eventos que mais de uma prancha declara ------------------------------- */
+const territoriais = arestas.filter((a) => a.tipo === 'territorio');
+const dosDoisLados = territoriais
+  .map((a) => ({ aresta: a, pranchas: [...(citacoes.get(chaveEvento(a)) ?? [])] }))
+  .filter((x) => x.pranchas.length > 1);
+
+const pos = (slug: string): [number, number] =>
+  projetar(porSlug.get(slug)!.ponto, L, A);
+---
+<Base titulo="Rede" descricao="A lente Rede do Terra Cognita: o grafo de relações do acervo — fronteiras e transferências de território — desenhado nas posições geográficas reais." larga>
+
+  <Prancha n={1} titulo="Rede" meta={`${nos.length} nós · ${arestas.length} arestas`}>
+    <div class="grade">
+      <div class="verbete">
+        <p class="abertura">
+          A quarta lente. Mapa responde onde, Tempo responde quando, Verbete responde por
+          quê — e a Rede responde com quem. Ela não carrega dado novo: as relações estão
+          no acervo desde a primeira prancha, à espera de alguém que as desenhasse.
+        </p>
+        <p class="fina">
+          As linhas finas são fronteiras terrestres. As magenta são transferências de
+          território, e apontam de quem cedeu para quem recebeu.
+        </p>
+      </div>
+      <aside>
+        <div class="nota nota--alerta">
+          <strong>Isto não é um mapa.</strong> Os nós estão na posição geográfica real
+          porque isso situa o leitor, mas as arestas são arcos de diagrama e as formas dos
+          países não estão desenhadas. Não se mede distância aqui.
+        </div>
+      </aside>
+    </div>
+
+    <figure class="rede">
+      <svg viewBox={`0 0 ${L} ${A}`} role="img"
+           aria-label={`Grafo de ${nos.length} países sul-americanos com ${arestas.length} relações: fronteiras terrestres e transferências de território.`}>
+        <g class="rede__fronteiras">
+          {arestas.filter((a) => a.tipo === 'fronteira').map((a) => (
+            <path d={arco(pos(a.de), pos(a.para), 0.08)} />
+          ))}
+        </g>
+        <g class="rede__territorios">
+          {territoriais.map((a) => (
+            <>
+              <path d={arco(pos(a.de), pos(a.para), 0.26)} marker-end="url(#ponta)" />
+              <text class="rede__ano"
+                    x={(pos(a.de)[0] + pos(a.para)[0]) / 2}
+                    y={(pos(a.de)[1] + pos(a.para)[1]) / 2 - 8}>
+                {a.rotulo} · {a.ano}
+              </text>
+            </>
+          ))}
+        </g>
+        <defs>
+          <marker id="ponta" viewBox="0 0 8 8" refX="7" refY="4"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 8 4 L 0 8 z" />
+          </marker>
+        </defs>
+        <g class="rede__nos">
+          {nos.map((n) => {
+            const [x, y] = pos(n.slug);
+            return (
+              <>
+                <circle cx={x} cy={y} r={n.temPrancha ? 6 : 3.5}
+                        class={n.temPrancha ? 'no no--prancha' : 'no'} />
+                <text x={x} y={y - 11} class={n.temPrancha ? 'rede__rot rede__rot--prancha' : 'rede__rot'}>
+                  {n.rotulo}
+                </text>
+              </>
+            );
+          })}
+        </g>
+      </svg>
+      <figcaption class="fina">
+        Fig. 1 — Relações do acervo entre os países sul-americanos. Nó cheio tem prancha
+        própria; nó pequeno existe no acervo mas ainda não tem prancha.
+      </figcaption>
+    </figure>
+
+    <h3>Transferências de território</h3>
+    <div class="rolagem">
+      <table>
+        <thead><tr><th>Território</th><th>De</th><th>Para</th><th>Ano</th><th>Instrumento</th></tr></thead>
+        <tbody>
+          {territoriais.map((a) => (
+            <tr>
+              <td><b>{a.rotulo}</b></td>
+              <td>{porSlug.get(a.de)?.rotulo}</td>
+              <td>{porSlug.get(a.para)?.rotulo}</td>
+              <td class="num">{a.ano}</td>
+              <td class="fina">{a.fonte ? obterFonte(a.fonte).titulo : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {dosDoisLados.length > 0 && (
+      <div class="nota" style="margin-top:var(--s-5)">
+        <strong>Citado dos dois lados.</strong> {dosDoisLados.length === 1
+          ? 'Uma transferência é declarada' : `${dosDoisLados.length} transferências são declaradas`} por
+        mais de uma prancha, apontando para a mesma fonte:
+        <ul class="lista" style="margin-top:var(--s-2)">
+          {dosDoisLados.map((x) => (
+            <li>
+              <b>{x.aresta.fonte ? obterFonte(x.aresta.fonte).titulo : x.aresta.rotulo}</b>
+              <span> — declarado pelas pranchas de {x.pranchas.map((s) => porSlug.get(s)?.rotulo ?? s).join(' e ')}.
+              É o mesmo evento lido de lados opostos: ganho numa, perda na outra. Nenhuma
+              das duas repete o fato da outra, porque ambas apontam para a mesma fonte —
+              e a Rede as reconhece como um evento só.</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </Prancha>
+</Base>
+
+<style>
+  .rede {
+    margin: var(--s-5) 0 0; border: 1px solid var(--neat); background: var(--sheet);
+    padding: var(--s-4);
+  }
+  .rede svg { width: 100%; height: auto; display: block; }
+  .rede figcaption { margin-top: var(--s-3); }
+
+  .rede__fronteiras path { fill: none; stroke: var(--rule); stroke-width: 1; }
+  .rede__territorios path {
+    fill: none; stroke: var(--cert-disputada); stroke-width: 1.6;
+    stroke-dasharray: 5 3;
+  }
+  .rede__territorios :global(marker path),
+  #ponta path { fill: var(--cert-disputada); stroke: none; }
+
+  .no { fill: var(--sheet); stroke: var(--ink-3); stroke-width: 1.5; }
+  .no--prancha { fill: var(--tinta-1); stroke: var(--neat); stroke-width: 2; }
+
+  .rede__rot {
+    font-family: var(--sans); font-size: 10px; fill: var(--ink-3);
+    text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 3px;
+  }
+  .rede__rot--prancha { fill: var(--ink); font-weight: 600; font-size: 12px; }
+  .rede__ano {
+    font-family: var(--mono); font-size: 9px; fill: var(--cert-disputada);
+    text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 3px;
+  }
+</style>

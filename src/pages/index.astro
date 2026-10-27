@@ -5,9 +5,9 @@ import Rosa from '../components/Rosa.astro';
 import RampaHipso from '../components/RampaHipso.astro';
 
 const lentes = [
-  { nome: 'Mapa',    chave: 'onde',     texto: 'Pilha de camadas sobre o globo, amarrada a um ano.' },
-  { nome: 'Tempo',   chave: 'quando',   texto: 'Linha do tempo rolável e o corte sincrônico: o que mais acontecia em 1848?' },
-  { nome: 'Rede',    chave: 'com quem', texto: 'Grafo de relações: aliança, vassalagem, colônia, comércio, filiação intelectual.' },
+  { nome: 'Mapa',    chave: 'onde',     texto: 'Pilha de camadas sobre o globo, amarrada a um ano.', href: '/atlas' },
+  { nome: 'Tempo',   chave: 'quando',   texto: 'Eixo proporcional dos marcos e o corte sincrônico: o que mais estava em vigor?', href: '/tempo' },
+  { nome: 'Rede',    chave: 'com quem', texto: 'Grafo de relações: fronteira, transferência de território, aliança, filiação.', href: '/rede' },
   { nome: 'Verbete', chave: 'por quê',  texto: 'O texto longo, com fontes, que nenhum mapa substitui.' },
 ];
 
@@ -33,8 +33,8 @@ const estado = [
   { fase: 'Fase 3', titulo: 'O estudo', estado: 'em curso', itens: [
     ['Trilhas curadas e baralhos', true],
     ['Índice de lugares', true],
-    ['Caderno, coleções, exportação', false],
-    ['Glossário e grafo de relações', false],
+    ['Grafo de relações', true],
+    ['Caderno, coleções, glossário', false],
   ]},
 ];
 ---
@@ -71,7 +71,7 @@ const estado = [
     <div class="lentes">
       {lentes.map((l) => (
         <div class="lente">
-          <h3>{l.nome}</h3>
+          <h3>{l.href ? <a href={l.href}>{l.nome}</a> : l.nome}</h3>
           <span class="versalete">{l.chave}</span>
           <p class="fina">{l.texto}</p>
         </div>

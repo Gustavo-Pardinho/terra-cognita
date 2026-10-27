@@ -125,6 +125,19 @@ por fórmula de destino geodésico em `src/lib/estado-mapa.ts`. Em Mercator eles
 a latitude; na ortográfica mudam de forma mas não de área. É a aula de distorção mais
 direta que um atlas pode dar.
 
+## A lente Rede
+
+`/rede` desenha o grafo de relações do acervo **nas posições geográficas reais**, não num
+layout de força. Num atlas a rede tem lugar: ver que a aresta do Acre liga dois vizinhos
+enquanto a do Litoral chega ao mar diz mais que qualquer arranjo abstrato dos mesmos nós.
+A prancha avisa explicitamente que não é um mapa e que não se mede distância nela.
+
+A lente não carrega dado novo — as relações estão no acervo desde a primeira prancha.
+O que ela acrescenta é o reconhecimento de **evento único visto de dois lados**: a cessão
+do Acre é declarada pela prancha do Brasil como ganho e pela da Bolívia como perda, e a
+Rede as reduz a uma aresta só porque ambas apontam para o mesmo tratado. Sem isso o
+rótulo se desenhava duas vezes sobre si mesmo.
+
 ## O que a segunda prancha ensinou
 
 O molde foi provado com o Brasil e generalizado pela Bolívia, escolhida justamente por
